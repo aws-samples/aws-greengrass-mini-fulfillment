@@ -3,15 +3,16 @@
 1. Install OS (Jessie-Lite Sept) on three hosts.
     - this demo has been built using Raspberry Pi 3 computers
 1. Configure the three hosts to be on the same network and note each host's IP  
-1. Execute the following steps from the development machine that contains the `~/mini-fulfillment` repository:
+1. Execute the following steps from the development machine that contains this repository. 
+    These instructions use the repository location as `~/mini-fulfillment`.
     1. Create the three Greengrass Core **things** and **certificates** in AWS IoT. 
-       _Per host_... 
+        **Per host**... 
         1. Download and name the certificate and key file pair as follows:
       
             | Filename | Description |
             | :--- | :--- |
-            | `cloud.pem.crt` | the GG Core's AWS IoT client certificate - **unique per host** |
-            | `cloud.pem.key` | the GG Core's AWS IoT client private key - **unique per host** |
+            | `cloud.pem.crt` | the GG Core's AWS IoT client certificate - **unique cert per host** |
+            | `cloud.pem.key` | the GG Core's AWS IoT client private key - **unique cert per host** |
     
         1. Place each pair of files in these directories, respectively.
             - `~/mini-fulfillment/groups/<host_type>/config/certs`
@@ -77,6 +78,11 @@
           inv_arm_ip = "zz.zz.zz.zz"      # << placeholder
           inv_arm_port = 8883
         ```
+    1. Create and activate the local development environment, from the top of 
+       the repository at `~/mini-fulfillment/`:
+        - Install a virtual environment: `virtualenv venv --python=python2.7`
+        - Activate the virtual environment: `source venv/bin/activate`
+        - Execute: `pip install -r requirements.txt`
     1. `cd ~/mini-fulfillment/groups/lambda`
     1. `chmod 755 refresh_lambdas.sh`
     1. `./refresh_lambdas.sh`
@@ -88,7 +94,7 @@
         $ python cert_setup.py create inv_arm <inv_arm_host_ip_address>
         $ python cert_setup.py create master <master_host_ip_address>
         ```
-        ..and send them to their destinations with this commands.
+        ..and send them to their destinations with this command.
         ```bash
         $ ./move_certs.sh
         ```
@@ -108,7 +114,7 @@
 
 1. Follow [these instructions](#tbd_link) to install (but not start) Greengrass on each host
 1. On each host make a `~/mini-fulfillment` directory
-1. Copy the directories from the `gg-mini-fulfillment` repository to each host. Specifically,
+1. Copy the directories from the `aws-greengrass-mini-fulfillment` repository to each host. Specifically,
     - `mini-fulfillment/groups/sort_arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/sort_arm`
     - `mini-fulfillment/groups/inv_arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/inv_arm`
         - ..and..
@@ -116,8 +122,7 @@
         - ...respectively
 1. On each host
     1. `cd ~/mini-fulfillment/<host_type>/`
-    1. `chmod 755 all_certs.sh`
-    1. `chmod 755 servo_build.sh`
+    1. `chmod 755 all_certs.sh servo_build.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `all_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
