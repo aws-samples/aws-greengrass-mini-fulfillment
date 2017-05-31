@@ -116,6 +116,25 @@ There are three processes on this host:
 Within the Inventory Arm Core, this is the Lambda function:
 - `ArmErrorDetector` -- this function monitors local telemetry and detects any error states
 
+### Noteworthy Files
+There are files in the repository that centralize a fair amount of work around the 
+instantiation of this demonstration.
+- `groups/group_setup.py` -- performs all provisioning of each host's Greengrass Group. 
+This file has three commands that are useful when instantiating this demo while 
+demonstrating the use of the Greengrass REST APIs.
+    - `create <host_type> <config_file>` -- creates a Greengrass Group for a given 
+    host type and configuration file. Also stores all of the provisioning 
+    artifacts (i.e. GroupID, etc.) in the local configuration file.
+    - `deploy <host_type> <config_file>` -- deploys a previously provisioned 
+    Greengrass Group
+    - `clean_all <config_file>` -- cleans up the entirety of an *un-deployed* 
+    Greengrass Group and the locally stored provisioning artifacts.
+- `groups/cert_setup.py` -- creates a Certificate Authority (CA) and Certificate 
+for use locally on each host. This protects communication between the Greengrass 
+Core and Greengrass Devices.
+- `groups/servo_setup.py` -- prepares the manufacturer's servo library for use 
+on a Raspberry Pi with the Raspbian OS.
+
 ## DIY
 If you'd like to build a copy of this demo yourself you'll want to read both 
 the [installation instructions](docs/INSTALL.md) and the 
