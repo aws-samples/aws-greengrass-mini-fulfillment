@@ -51,8 +51,6 @@ logs
 dynamixel_functions.py
 servode.py
 DynamixelSDK-*/
-sort_arm/ggd/DynamixelSDK-3.4.1/
-master/ggd/DynamixelSDK-3.4.1/
 
 # BDist Artifacts #
 ###################
