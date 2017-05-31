@@ -6,9 +6,8 @@ You should now see `daemon` in the process list via `top`
 
 **Start GG Devices** -- in `master-pi` Terminal 02 execute:
 
-1. `cd ~/gg-mini-fulfillment/groups/`
-1. `chmod 755 master/run_ggd.sh`
-1. `chmod 755 master/stop_ggd.sh`
+1. `cd ~/mini-fulfillment/groups/`
+1. `chmod 755 master/run_ggd.sh master/stop_ggd.sh`
 1. `./master/run_ggd.sh`
 **Note:** you should see the white button light turn on
 

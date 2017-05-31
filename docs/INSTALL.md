@@ -3,7 +3,7 @@
 1. Install OS (Jessie-Lite Sept) on three hosts.
     - this demo has been built using Raspberry Pi 3 computers
 1. Configure the three hosts to be on the same network and note each host's IP  
-1. Execute the following steps from the development machine that contains the `~/gg-mini-fulfillment` repository:
+1. Execute the following steps from the development machine that contains the `~/mini-fulfillment` repository:
     1. Create the three Greengrass Core **things** and **certificates** in AWS IoT. 
        _Per host_... 
         1. Download and name the certificate and key file pair as follows:
@@ -14,10 +14,10 @@
             | `cloud.pem.key` | the GG Core's AWS IoT client private key - **unique per host** |
     
         1. Place each pair of files in these directories, respectively.
-            - `~/gg-mini-fulfillment/groups/<host_type>/config/certs`
+            - `~/mini-fulfillment/groups/<host_type>/config/certs`
      
         1. Place the `thing_arn`, `cert_arn`, and `thing_name` values for each GG Core 
-        in `~/gg-mini-fulfillment/groups/<host_type>/config/cfg.json` 
+        in `~/mini-fulfillment/groups/<host_type>/config/cfg.json` 
             ```python
             { 
               "core": {
@@ -32,7 +32,7 @@
     
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT named 
        and located as follows:
-        - `~/gg-mini-fulfillment/groups/master/ggd/certs`
+        - `~/mini-fulfillment/groups/master/ggd/certs`
           ```
           GGD_belt.certificate.pem.crt
           GGD_belt.private.key
@@ -47,7 +47,7 @@
           GGD_web.private.key
           GGD_web.public.key
           ```
-        - `~/gg-mini-fulfillment/groups/sort_arm/ggd/certs`
+        - `~/mini-fulfillment/groups/sort_arm/ggd/certs`
           ```
           GGD_arm.certificate.pem.crt
           GGD_arm.private.key
@@ -56,7 +56,7 @@
           GGD_heartbeat.private.key
           GGD_heartbeat.public.key
           ```
-        - `~/gg-mini-fulfillment/groups/inv_arm/ggd/certs`
+        - `~/mini-fulfillment/groups/inv_arm/ggd/certs`
           ```
           GGD_arm.certificate.pem.crt
           GGD_arm.private.key
@@ -66,7 +66,7 @@
           GGD_heartbeat.public.key
           ```
     1. For each host, update the placeholder values in each
-       `~/gg-mini-fulfillment/groups/<host_type>/ggd/config.py` file with the host 
+       `~/mini-fulfillment/groups/<host_type>/ggd/config.py` file with the host 
        IPs noted earlier. 
         - Example:
         ```python
@@ -77,10 +77,10 @@
           inv_arm_ip = "zz.zz.zz.zz"      # << placeholder
           inv_arm_port = 8883
         ```
-    1. `cd ~/gg-mini-fulfillment/groups/lambda`
+    1. `cd ~/mini-fulfillment/groups/lambda`
     1. `chmod 755 refresh_lambdas.sh`
     1. `./refresh_lambdas.sh`
-    1. `cd ~/gg-mini-fullfillment/groups`
+    1. `cd ~/mini-fullfillment/groups`
     1. Create a Group Private CA and Certificate for each Greengrass Core by 
        executing the following commands:
         ```bash
@@ -107,15 +107,15 @@
         ```
 
 1. Follow [these instructions](#tbd_link) to install (but not start) Greengrass on each host
-1. On each host make a `~/gg-mini-fulfillment` directory
+1. On each host make a `~/mini-fulfillment` directory
 1. Copy the directories from the `gg-mini-fulfillment` repository to each host. Specifically,
-    - `gg-mini-fulfillment/groups/sort_arm` to `sort_arm-pi$ ~/gg-mini-fulfillment/groups/sort_arm`
-    - `gg-mini-fulfillment/groups/inv_arm` to `inv_arm-pi$ ~/gg-mini-fulfillment/groups/inv_arm`
+    - `mini-fulfillment/groups/sort_arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/sort_arm`
+    - `mini-fulfillment/groups/inv_arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/inv_arm`
         - ..and..
-    - `gg-mini-fulfillment/groups/master` to `master-pi$ ~/gg-mini-fulfillment/groups/master`
+    - `mini-fulfillment/groups/master` to `master-pi$ ~/mini-fulfillment/groups/master`
         - ...respectively
 1. On each host
-    1. `cd ~/gg-mini-fulfillment/<host_type>/`
+    1. `cd ~/mini-fulfillment/<host_type>/`
     1. `chmod 755 all_certs.sh`
     1. `chmod 755 servo_build.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`

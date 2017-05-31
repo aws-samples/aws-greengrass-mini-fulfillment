@@ -1,9 +1,9 @@
 ## The Greengrass mini-fulfillment center demo 
 
-At re:Invent 2016 AWS Greengrass (aka. GG) was introduced to the world. This miniature 
+At re:Invent 2016 AWS Greengrass was introduced to the world. This miniature 
 fulfillment center demonstration was used to display what could be done with 
 Greengrass when announced. It has since been upgraded to use the publicly available 
-version of Greengrass.  
+version of Greengrass.
  
 A [video](https://youtu.be/XQQjX8GTEko?t=27m27s) was taken of the completed and 
 operational Greengrass-based miniature fulfillment center demo in action at re:Invent.
@@ -13,7 +13,7 @@ available in this repo. We look forward to seeing what you'll do with it.
 
 ### Directory Structure
 ```
-gg-mini-fulfillment/
+aws-greengrass-mini-fulfillment/
   +- docs/
   |  +- BOM.md       -- the bill of materials necessary for construction
   |  +- CONSTR.md    -- instructions for physical construction
@@ -73,11 +73,12 @@ As shown in the video above, even with these simple stages the interaction betwe
 the three Groups displays complex, cohesive, and coordinated behaviors.
 
 This is possible because the whole system is modeled as a collection of micro-services. 
-Those micro-services then leverage high-speed local messaging within and between 
-groups, as well as transactional state control using local device shadows. 
+Those micro-services then leverage high-speed local messaging to enable communication 
+within and between groups, as well as transactional state control using local device 
+shadows. 
 
 The high-level, local architecture of the demo is:
-![gg-mini-fulfillment demo architecture](docs/img/demo-architecture.png)
+![mini-fulfillment demo architecture](docs/img/demo-architecture.png)
 
 ### Master/Conveyor Host
 There are five processes on this host:
