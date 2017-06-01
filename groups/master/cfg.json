@@ -1,0 +1,81 @@
+{
+  "core": {
+    "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+    "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+    "thing_name": "<device_thing_name>"
+  },
+  "core_def": {
+    "id": "",
+    "version_arn": ""
+  },
+  "device_def": {
+    "id": "",
+    "version_arn": ""
+  },
+  "devices": {
+    "GGD_belt": {
+      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+      "thing_name": "<device_thing_name>"
+    },
+    "GGD_bridge": {
+      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<bridge_thing_name>",
+      "thing_name": "<bridge_thing_name>"
+    },
+    "GGD_button": {
+      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+      "thing_name": "<device_thing_name>"
+    },
+    "GGD_heartbeat": {
+      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+      "thing_name": "<device_thing_name>"
+    },
+    "GGD_inv_arm": {
+      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+      "thing_name": "<device_thing_name>"
+    },
+    "GGD_sort_arm": {
+      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+      "thing_name": "<device_thing_name>"
+    },
+    "GGD_web": {
+      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+      "thing_name": "<device_thing_name>"
+    }
+  },
+  "group": {
+    "id": "fc3057b0-1a8a-4068-a3c0-20a8eff568e5"
+  },
+  "lambda_functions": {
+    "MasterBrain": {
+      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterBrain:1"
+    },
+    "MasterErrorDetector": {
+      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterErrorDetector:1"
+    }
+  },
+  "func_def": {
+    "id": "",
+    "version_arn": ""
+  },
+  "logging_def": {
+    "id": "",
+    "version_arn": ""
+  },
+  "subscription_def": {
+    "id": "",
+    "version_arn": ""
+  },
+  "subscriptions": {
+    "all": "/convey/#",
+    "errors": "/convey/errors",
+    "stages": "/convey/stages",
+    "telemetry": "/convey/telemetry"
+  }
+}
