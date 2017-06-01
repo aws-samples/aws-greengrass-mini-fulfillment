@@ -70,3 +70,4 @@ build
 ###################
 tmp_*
 cfg.tmp.json
+!*ggd/servode/setup.cfg
