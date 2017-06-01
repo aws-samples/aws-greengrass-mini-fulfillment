@@ -34,7 +34,7 @@ If `button` is successful the physical button lights will turn on.
 If `belt` is successful you'll see `[btt.__init__] frequency:<value>` in the output.
 
 **Stop GG Devices** -- in a `master-pi` Terminal execute:
-1. `cd ~/gg-mini-fulfillment/groups/master`
+1. `cd ~/mini-fulfillment/groups/master`
 1. `./stop_ggd.sh`
 
 ## Startup Arm Hosts `sort_arm-pi` and `inv_arm-pi`
@@ -45,7 +45,7 @@ You should now see `daemon` in the process list via `top`
 
 **Start GG Devices** -- in Terminal 02 execute:
 
-1. `cd ~/gg-mini-fulfillment/groups/`
+1. `cd ~/mini-fulfillment/groups/`
 1. `chmod 755 <inv_arm|sort_arm>/run_ggd.sh`
 1. `chmod 755 <inv_arm|sort_arm>/stop_ggd.sh`
 1. `./<inv_arm|sort_arm>/run_ggd.sh`
@@ -71,7 +71,7 @@ Then remember to detach from the screen using `Ctrl-A, D`, **not** `Ctrl-C`.
 :warning: – Using `Ctrl-C` will exit the process being viewed.
 
 **Stop GG Devices** -- in a Terminal execute:
-1. `cd ~/gg-mini-fulfillment/groups/<inv_arm|sort_arm>/`
+1. `cd ~/mini-fulfillment/groups/<inv_arm|sort_arm>/`
 1. `./stop_ggd.sh`
 
 ## To Start the Demo

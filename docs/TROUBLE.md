@@ -10,7 +10,7 @@ Traceback (most recent call last):
     raise EnvironmentError("connection to GG Core MQTT failed.")
 EnvironmentError: connection to GG Core MQTT failed.
 ```
-...please ensure you have executed `greengrassd start`.
+...please ensure you have executed `sudo /greengrass/greengrassd start`.
 
 #### Has everything stopped?
 To ensure nothing is running you can execute the following and expect 
@@ -26,9 +26,9 @@ If the IP addresses change for some reason:
 2. Take note of each host's new IP
 3. Update the files on each host to reflect the new IP addresses. Specifically:
 ```
-~/gg-mini-fulfillment/master/ggd/config.py
-~/gg-mini-fulfillment/inv_arm/ggd/config.py
-~/gg-mini-fulfillment/sort_arm/ggd/config.py
+~/mini-fulfillment/master/ggd/config.py
+~/mini-fulfillment/inv_arm/ggd/config.py
+~/mini-fulfillment/sort_arm/ggd/config.py
 ```
 
 #### Getting errors when Creating Cores
@@ -45,5 +45,5 @@ the original state. The original state will have empty values for:
 If any of those values are not empty, the `create` function has been run previously. 
   
 If you still want to execute the `create` function, prior to executing `create` remove the Group containing the particular host's Greengrass Core. To do this, 
-browse to the Greengrass console and delete the Group.  
+browse to the Greengrass console and delete the Group.
 `-=-=-=-=-`
