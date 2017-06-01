@@ -70,4 +70,9 @@ build
 ###################
 tmp_*
 cfg.tmp.json
-!*ggd/servode/setup.cfg
+
+# sub-repo include #
+####################
+!/groups/sort_arm/ggd/servode/setup.cfg
+!/groups/inv_arm/ggd/servode/setup.cfg
+!/groups/master/ggd/servode/setup.cfg
