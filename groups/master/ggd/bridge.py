@@ -100,27 +100,27 @@ if __name__ == '__main__':
     mqttc_master.configureEndpoint(
         ggd_config.master_core_ip, ggd_config.master_core_port)
     mqttc_master.configureCredentials(
-        CAFilePath=dir_path + "certs/master-server.crt",
-        KeyPath=dir_path + "certs/GGD_bridge.private.key",
-        CertificatePath=dir_path + "certs/GGD_bridge.certificate.pem.crt"
+        CAFilePath=dir_path + "/certs/master-server.crt",
+        KeyPath=dir_path + "/certs/GGD_bridge.private.key",
+        CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
     )
 
     mqttc_sort_arm = AWSIoTMQTTClient(ggd_name)
     mqttc_sort_arm.configureEndpoint(
         ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
     mqttc_sort_arm.configureCredentials(
-        CAFilePath=dir_path + "certs/sort_arm-server.crt",
-        KeyPath=dir_path + "certs/GGD_bridge.private.key",
-        CertificatePath=dir_path + "certs/GGD_bridge.certificate.pem.crt"
+        CAFilePath=dir_path + "/certs/sort_arm-server.crt",
+        KeyPath=dir_path + "/certs/GGD_bridge.private.key",
+        CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
     )
 
     mqttc_inv_arm = AWSIoTMQTTClient(ggd_name)
     mqttc_inv_arm.configureEndpoint(
         ggd_config.inv_arm_ip, ggd_config.inv_arm_port)
     mqttc_inv_arm.configureCredentials(
-        CAFilePath=dir_path + "certs/inv_arm-server.crt",
-        KeyPath=dir_path + "certs/GGD_bridge.private.key",
-        CertificatePath=dir_path + "certs/GGD_bridge.certificate.pem.crt"
+        CAFilePath=dir_path + "/certs/inv_arm-server.crt",
+        KeyPath=dir_path + "/certs/GGD_bridge.private.key",
+        CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
     )
 
     init_bridge()
