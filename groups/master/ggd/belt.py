@@ -12,19 +12,25 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+import os
 import json
 import time
-import logging
 import argparse
 import datetime
 import threading
 import collections
+import logging
+
 from cachetools import TTLCache
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
-
-from mqtt_utils import mqtt_connect
-
 from servode import Servo, ServoGroup, ServoProtocol
+
+import ggd_config
+from mqtt_utils import mqtt_connect
+from ..group_config import GroupConfigFile
+
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('belt')
 handler = logging.StreamHandler()
@@ -35,36 +41,19 @@ log.addHandler(handler)
 log.setLevel(logging.INFO)
 
 
-GGD_NAME = "GGD_belt"
 GGD_BELT_TELEMETRY_TOPIC = "/convey/telemetry"
 GGD_BELT_ERRORS_TOPIC = "/convey/errors"
 STAGE_TOPIC = "/convey/stages"
 
 commands = ['run', 'stop']
-
-# belt_ids = [10, 11, 12]  # when there are three conveyors
-belt_ids = [10]  # when there is one conveyor
+belt_ids = [10]  # when there is one conveyor, there is one servo ID
+bone_servo_cache = TTLCache(maxsize=32, ttl=120)
 should_loop = True
-
-# get a shadow client to receive commands
-mqttc_shadow_client = AWSIoTMQTTShadowClient(GGD_NAME)
-mqttc_shadow_client.configureTlsInsecure(True)
-mqttc_shadow_client.configureEndpoint("localhost", 8883)
-mqttc_shadow_client.configureCredentials(
-    CAFilePath="certs/master-server.crt",
-    KeyPath="certs/GGD_belt.private.key",
-    CertificatePath="certs/GGD_belt.certificate.pem.crt"
-)
-
-mqttc = mqttc_shadow_client.getMQTTConnection()
-
-master_shadow = None
 cmd_event = threading.Event()
 cmd_event.clear()
-
-bone_servo_cache = TTLCache(maxsize=32, ttl=120)
-btwo_servo_cache = TTLCache(maxsize=32, ttl=120)
-bthree_servo_cache = TTLCache(maxsize=32, ttl=120)
+cfg = None
+ggd_name = 'Empty'
+master_shadow = None
 
 
 def shadow_mgr(payload, status, token):
@@ -78,30 +67,13 @@ def shadow_mgr(payload, status, token):
         json.dumps(json.loads(payload), sort_keys=True), token))
 
 
-def initialize():
-    if not mqtt_connect(mqttc_shadow_client):
-        raise EnvironmentError("connection to Master Shadow failed.")
-
-    # create and register the shadow handler on delta topics for commands
-    global master_shadow
-    master_shadow = mqttc_shadow_client.createShadowHandlerWithName(
-        "MasterBrain", True)  # persistent connection with MasterBrain shadow
-
-    token = master_shadow.shadowGet(shadow_mgr, 5)
-    log.debug("[initialize] shadowGet() tk:{0}".format(token))
-
-    with ServoProtocol() as sproto:
-        for servo_id in belt_ids:
-            sproto.ping(servo=servo_id)
-
-
 def stage_message(stage, text='', stage_result=None):
     return json.dumps({
         "stage": stage,
         "addl_text": text,
         "stage_result": stage_result,
         "ts": datetime.datetime.now().isoformat(),
-        "ggd_id": GGD_NAME
+        "ggd_id": ggd_name
     })
 
 
@@ -129,7 +101,7 @@ def belt_message(servo_group):
     msg = {
         "version": "2016-11-01",
         "data": data,
-        "ggd_id": GGD_NAME
+        "ggd_id": ggd_name
     }
     log.debug('[belt_message] msg:{0}'.format(msg))
     return msg
@@ -140,9 +112,7 @@ class BeltControlThread(threading.Thread):
     The thread that sets up control interaction with the Servos.
     """
 
-    # TODO move control into Lambda - TBD pending determination of Lambdas being
-    #   able to access serial port
-
+    # TODO move control into Lambda
     def __init__(self, servo_group, event, belt_speed, args=(), kwargs={}):
         super(BeltControlThread, self).__init__(
             name="belt_control_thread", args=args, kwargs=kwargs
@@ -321,10 +291,11 @@ class BeltTelemetryThread(threading.Thread):
 
 
 if __name__ == "__main__":
-    initialize()
     parser = argparse.ArgumentParser(
         description='Conveyor Belt control and telemetry',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('config_file',
+                        help="The config file.")
     parser.add_argument('--frequency', default=3.0,
                         dest='frequency', type=float,
                         help="Modify the default telemetry sample frequency.")
@@ -336,7 +307,36 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.debug:
         log.setLevel(logging.DEBUG)
-        # logging.getLogger("servode").setLevel(logging.DEBUG)
+
+    cfg = GroupConfigFile(args.config_file)
+    ggd_name = cfg['devices']['GGD_belt']['thing_name']
+
+    # get a shadow client to receive commands
+    mqttc_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
+    mqttc_shadow_client.configureEndpoint(
+        ggd_config.master_core_ip, ggd_config.master_core_port
+    )
+    mqttc_shadow_client.configureCredentials(
+        CAFilePath=dir_path + "/certs/master-server.crt",
+        KeyPath=dir_path + "/certs/GGD_belt.private.key",
+        CertificatePath=dir_path + "/certs/GGD_belt.certificate.pem.crt"
+    )
+
+    mqttc = mqttc_shadow_client.getMQTTConnection()
+
+    if not mqtt_connect(mqttc_shadow_client):
+        raise EnvironmentError("connection to Master Shadow failed.")
+
+    # create and register the shadow handler on delta topics for commands
+    master_shadow = mqttc_shadow_client.createShadowHandlerWithName(
+        "MasterBrain", True)  # persistent connection with MasterBrain shadow
+
+    token = master_shadow.shadowGet(shadow_mgr, 5)
+    log.debug("[initialize] shadowGet() tk:{0}".format(token))
+
+    with ServoProtocol() as sproto:
+        for servo_id in belt_ids:
+            sproto.ping(servo=servo_id)
 
     with ServoProtocol() as sp:
         sg = ServoGroup()
