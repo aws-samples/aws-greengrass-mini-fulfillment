@@ -84,8 +84,8 @@
         - Activate the virtual environment: `source venv/bin/activate`
         - Execute: `pip install -r requirements.txt`
     1. `cd ~/mini-fulfillment/groups/lambda`
-    1. `chmod 755 refresh_lambdas.sh`
-    1. `./refresh_lambdas.sh`
+    1. `chmod 755 create_lambdas.sh`
+    1. `./create_lambdas.sh`
     1. `cd ~/mini-fullfillment/groups`
     1. Create a Group Private CA and Certificate for each Greengrass Core by 
        executing the following commands:
@@ -98,7 +98,7 @@
         ```bash
         $ ./move_certs.sh
         ```
-    1. Download the servo software used by the Greengrass Devices
+    1. Download and prep the servo software used by the Greengrass Devices
         ```bash
         $ ./servo_setup.py
         ```
