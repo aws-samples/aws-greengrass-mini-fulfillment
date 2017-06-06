@@ -13,10 +13,9 @@
 # permissions and limitations under the License.
 
 """
-Bridge messages from the sorting_arm core to this core.
+Bridge messages from the arm cores to this core.
 """
-
-import json
+import os
 import time
 import logging
 import argparse
@@ -26,9 +25,11 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
 import ggd_config
 from mqtt_utils import mqtt_connect
+from ..group_config import GroupConfigFile
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('bridge')
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
@@ -36,37 +37,11 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-GGD_NAME = "GGD_bridge"
-# GGC_THING_NAME = 'Core'
+ggd_name = 'Empty'
 
-mqttc_master = AWSIoTMQTTClient(GGD_NAME)
-mqttc_master.configureTlsInsecure(True)
-mqttc_master.configureEndpoint(
-    ggd_config.master_core_ip, ggd_config.master_core_port)
-mqttc_master.configureCredentials(
-    CAFilePath="certs/master-server.crt",
-    KeyPath="certs/GGD_bridge.private.key",
-    CertificatePath="certs/GGD_bridge.certificate.pem.crt"
-)
-
-mqttc_sort_arm = AWSIoTMQTTClient(GGD_NAME)
-mqttc_sort_arm.configureTlsInsecure(True)
-mqttc_sort_arm.configureEndpoint(ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
-mqttc_sort_arm.configureCredentials(
-    CAFilePath="certs/sort_arm-server.crt",
-    KeyPath="certs/GGD_bridge.private.key",
-    CertificatePath="certs/GGD_bridge.certificate.pem.crt"
-)
-
-mqttc_inv_arm = AWSIoTMQTTClient(GGD_NAME)
-mqttc_inv_arm.configureTlsInsecure(True)
-mqttc_inv_arm.configureEndpoint(ggd_config.inv_arm_ip, ggd_config.inv_arm_port)
-mqttc_inv_arm.configureCredentials(
-    CAFilePath="certs/inv_arm-server.crt",
-    KeyPath="certs/GGD_bridge.private.key",
-    CertificatePath="certs/GGD_bridge.certificate.pem.crt"
-)
-
+mqttc_master = None
+mqttc_sort_arm = None
+mqttc_inv_arm = None
 should_loop = True
 
 
@@ -82,7 +57,7 @@ def inventory_bridge(client, userdata, message):
     mqttc_master.publish(message.topic, message.payload, 0)
 
 
-def init():
+def init_bridge():
     log.info("[bridge] Starting connection to Master/Conveyor Core")
     if mqtt_connect(mqttc_master):
         log.info("[bridge] Connected to Master/Conveyor Core")
@@ -115,7 +90,37 @@ if __name__ == '__main__':
     if args.debug:
         log.setLevel(logging.DEBUG)
 
-    init()
+    cfg = GroupConfigFile(args.config_file)
+    ggd_name = cfg['devices']['GGD_bridge']['thing_name']
+
+    mqttc_master = AWSIoTMQTTClient(ggd_name)
+    mqttc_master.configureEndpoint(
+        ggd_config.master_core_ip, ggd_config.master_core_port)
+    mqttc_master.configureCredentials(
+        CAFilePath=dir_path + "certs/master-server.crt",
+        KeyPath=dir_path + "certs/GGD_bridge.private.key",
+        CertificatePath=dir_path + "certs/GGD_bridge.certificate.pem.crt"
+    )
+
+    mqttc_sort_arm = AWSIoTMQTTClient(ggd_name)
+    mqttc_sort_arm.configureEndpoint(
+        ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
+    mqttc_sort_arm.configureCredentials(
+        CAFilePath=dir_path + "certs/sort_arm-server.crt",
+        KeyPath=dir_path + "certs/GGD_bridge.private.key",
+        CertificatePath=dir_path + "certs/GGD_bridge.certificate.pem.crt"
+    )
+
+    mqttc_inv_arm = AWSIoTMQTTClient(ggd_name)
+    mqttc_inv_arm.configureEndpoint(
+        ggd_config.inv_arm_ip, ggd_config.inv_arm_port)
+    mqttc_inv_arm.configureCredentials(
+        CAFilePath=dir_path + "certs/inv_arm-server.crt",
+        KeyPath=dir_path + "certs/GGD_bridge.private.key",
+        CertificatePath=dir_path + "certs/GGD_bridge.certificate.pem.crt"
+    )
+
+    init_bridge()
 
     try:
         start = datetime.datetime.now()
