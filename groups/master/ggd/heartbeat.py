@@ -66,7 +66,7 @@ def heartbeat(config_file, frequency=3):
 
                 now = datetime.datetime.now()
                 msg = {
-                    "version": "2016-11-01",
+                    "version": "2017-06-08",
                     "ggd_id": heartbeat_name,
                     "hostname": hostname,
                     "data": [
