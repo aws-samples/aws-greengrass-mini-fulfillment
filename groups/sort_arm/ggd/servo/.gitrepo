@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/brettf/servode.git
+	branch = master
+	commit = 767a117a81c660a39c881333074fefc9b8d61c9f
+	parent = 36242e58a41a4b8867ab36b3737f27957d6341c5
+	cmdver = 0.3.1
