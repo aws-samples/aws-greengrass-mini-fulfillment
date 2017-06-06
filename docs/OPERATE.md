@@ -2,7 +2,8 @@
 **Start GG Core** -- in `master-pi` Terminal 01 execute:
 1. `cd /greengrass`
 1. `sudo ./greengrassd start`
-You should now see `daemon` in the process list via `top`
+You should now see `syncmanager`, `connmanager`, `certmanager`, `spectre` or other 
+processes owned by `ggc_user` in the process list via `top`
 
 **Start GG Devices** -- in `master-pi` Terminal 02 execute:
 
@@ -28,7 +29,7 @@ re-attaches to the `web` device process in the above list:
 ```
 screen -r 8281
 ```
-Then remember to detach from the screen using `Ctrl-A, D` not `Ctrl-C`.
+:warning: Then remember to detach from the screen using `Ctrl-A, D` not `Ctrl-C`.
 
 If `button` is successful the physical button lights will turn on.
 If `belt` is successful you'll see `[btt.__init__] frequency:<value>` in the output.
@@ -41,7 +42,8 @@ If `belt` is successful you'll see `[btt.__init__] frequency:<value>` in the out
 **Start GG Core** -- in Terminal 01 execute:
 1. `cd /greengrass`
 1. `sudo ./greengrassd start`
-You should now see `daemon` in the process list via `top`
+You should now see `syncmanager`, `connmanager`, `certmanager`, `spectre` or other 
+processes owned by `ggc_user` in the process list via `top`
 
 **Start GG Devices** -- in Terminal 02 execute:
 
