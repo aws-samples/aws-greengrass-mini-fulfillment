@@ -159,14 +159,3 @@ if __name__ == "__main__":
     fire.Fire({
         'create': create
     })
-
-    # create(
-    #     func_name='ArmErrorDetector',
-    #     lambda_main='error_detector',
-    #     lambda_files=['error_detector.py']
-    # )
-    # update(
-    #     func_name='SHSortArmErrorDetector',
-    #     lambda_main='error_detector',
-    #     lambda_files=['error_detector.py']
-    # )
