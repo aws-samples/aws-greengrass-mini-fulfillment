@@ -328,8 +328,9 @@ if __name__ == "__main__":
         raise EnvironmentError("connection to Master Shadow failed.")
 
     # create and register the shadow handler on delta topics for commands
+    # with a persistent connection to the Master shadow
     master_shadow = mqttc_shadow_client.createShadowHandlerWithName(
-        "MasterBrain", True)  # persistent connection with MasterBrain shadow
+        ggd_config.master_shadow_name, True)
 
     token = master_shadow.shadowGet(shadow_mgr, 5)
     log.debug("[initialize] shadowGet() tk:{0}".format(token))

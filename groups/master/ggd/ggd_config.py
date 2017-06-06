@@ -20,6 +20,8 @@ sort_arm_port = 8883
 inv_arm_ip = "10.0.1.42"
 inv_arm_port = 8883
 
+master_shadow_name = "MasterBrain"
+
 convey_topics = [
     "/convey/telemetry",
     "/convey/errors",
