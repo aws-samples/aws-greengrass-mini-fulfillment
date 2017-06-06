@@ -122,7 +122,7 @@
         - ...respectively
 1. On each host
     1. `cd ~/mini-fulfillment/groups/<host_type>/`
-    1. `chmod 755 all_certs.sh run_ggd.sh servo_build.sh`
+    1. `chmod 755 all_certs.sh run_ggd.sh servo_build.sh stop_ggd.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `all_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.

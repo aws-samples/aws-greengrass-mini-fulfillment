@@ -56,7 +56,9 @@ dxl_python_file = os.curdir + '/DynamixelSDK-3.4.3/python/dynamixel_functions_py
 win_match = r'dxl_lib = cdll.LoadLibrary("../../c/build/win32/output/dxl_x86_c.dll")'
 win_after = r'# dxl_lib = cdll.LoadLibrary("../../c/build/win32/output/dxl_x86_c.dll")'
 sbc_match = r'# dxl_lib = cdll.LoadLibrary("../../c/build/linux_sbc/libdxl_sbc_c.so")'
-sbc_after = r'dxl_lib = cdll.LoadLibrary("DynamixelSDK-3.4.3/c/build/linux_sbc/libdxl_sbc_c.so")'
+sbc_imp   = 'import os\n'
+sbc_path  = 'dir_path = os.path.dirname(os.path.realpath(__file__))\n'
+sbc_after = 'dxl_lib = cdll.LoadLibrary(dir_path + "/DynamixelSDK-3.4.3/c/build/linux_sbc/libdxl_sbc_c.so")'
 out_fname = "dxl_funcs_py.tmp"
 print("...finding lib strings...")
 with open(dxl_python_file) as f:
@@ -65,6 +67,8 @@ with open(dxl_python_file) as f:
             if line.find(win_match) >= 0:
                 out.write(line.replace(win_match, win_after))
             elif line.find(sbc_match) >= 0:
+                out.write(sbc_imp)
+                out.write(sbc_path)
                 out.write(line.replace(sbc_match, sbc_after))
             else:
                 out.write(line)
