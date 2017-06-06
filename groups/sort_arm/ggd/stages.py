@@ -8,7 +8,7 @@ import threading
 import numpy.ma as ma
 
 from decimal import Decimal, ROUND_HALF_UP
-from servode import Servo, ServoGroup, ServoProtocol
+from .servo.servode import Servo, ServoGroup, ServoProtocol
 
 from image_processor import ImageProcessor
 
@@ -16,7 +16,6 @@ import ggd_config
 
 
 log = logging.getLogger('stages')
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
@@ -132,44 +131,6 @@ def polar_goals(x, y):
     if bg < polar_axis:
         bg = polar_axis
 
-    # convert rho into femur goal and tibia goal
-    # max_femur_reach = 250
-    # max_femur_reach = 300
-    # min_femur_reach = 390
-    # max_tibia_reach = 505
-    # min_tibia_reach = 180
-    # femur_travel = abs(max_femur_reach - min_femur_reach)
-    # tibia_travel = abs(max_tibia_reach - min_tibia_reach)
-    #
-    # fg_rho = rho*.50
-    # fg_reach = int(fg_rho/96*femur_travel)
-    # # fg_reach = int(half_rho/MAX_IMAGE_HEIGHT*femur_travel)
-    # fg = max_femur_reach + fg_reach
-    # tg_rho = rho*.60
-    # tg_reach = int(tg_rho/96*tibia_travel)
-    # # tg_reach = int(half_rho/MAX_IMAGE_HEIGHT*tibia_travel)
-    # tg = max_tibia_reach - tg_reach
-
-    # y_percent = float(y / 100)
-    # # Femur maths
-    # # A - Turn Y into a percent
-    # # B - Multiply Y against the total travel of ThreeD_Base
-    # # C - Take the MAX of ThreeD_Elbow - B
-    # threeD_femur_max = 451  # Then pad it some (550 + another say 40)
-    # threeD_femur_min = 363  # Then pad it some (420 - another say 40)
-    # threeD_femur_travel = threeD_femur_max - threeD_femur_min
-    # fg = int(threeD_femur_max - (threeD_femur_travel * y_percent))
-    # log.info("[polar_goals] Femur goal position is:{0}".format(fg))
-    # # Tibia maths
-    # # A - Turn X into a percent
-    # # B - Multiply X against the total travel of threeD_femur
-    # # C - Take the MAX of threeD_Elbow + B
-    # threeD_tibia_max = 420  # Then pad it some (370 + another say 40)
-    # threeD_tibia_min = 150  # Then pad it some (135 - another say 40)
-    # threeD_tibia_travel = threeD_tibia_max - threeD_tibia_min
-    # tg = int(threeD_tibia_min + (threeD_tibia_travel * y_percent))
-    # log.info("[polar_goals] Tibia goal position is:{0}".format(tg))
-
     bg_cart, fg, tg = cartesian_goals(x, y)
     return bg + 20, fg, tg
 
@@ -190,7 +151,7 @@ class ArmStages(object):
             OPEN_EFFECTOR  # fifth servo value
         ], block=True, margin=POSITION_MARGIN)
 
-        # little sleepy motion in end effector for fun
+        # little sleepy motion in the end effector for fun
         self.sg['effector']['goal_position'] = GRAB_EFFECTOR
         time.sleep(0.4)
         self.sg['effector']['goal_position'] = GRAB_EFFECTOR + 100
@@ -218,16 +179,6 @@ class ArmStages(object):
             return stage_results
 
         # # start at the middle-out position for all servos
-        # servo_group.goal_position([
-        #     (HOME_BASE-160),   # first servo value
-        #     (HOME_FEMUR_1-100),  # second servo value
-        #     (HOME_FEMUR_2-100),  # third servo value
-        #     (HOME_TIBIA+170),  # fourth servo value
-        #     (OPEN_EFFECTOR-100)  # fifth servo value
-        # ], block=True, margin=POSITION_MARGIN)
-        # stage_results['first_move'] = True
-        # log.debug("[stage_home] after first move")
-
         self.sg.goal_position([
             HOME_BASE,  # first servo value
             HOME_FEMUR_1,  # second servo value
@@ -362,17 +313,6 @@ class ArmStages(object):
         self.sg['effector']['goal_position'] = GRAB_EFFECTOR
         time.sleep(.5)
 
-        # #go to HOME position
-        # ######################################################
-        # servo_group.write_values("goal_position", [
-        #     HOME_BASE,
-        #     HOME_FEMUR_1,
-        #     HOME_FEMUR_2,
-        #     HOME_TIBIA,
-        #     GRAB_EFFECTOR
-        # ])
-        # time.sleep(.2)
-
         stage_results['pick_complete'] = True
         log.info("[stage_pick] _end_")
 
@@ -432,14 +372,6 @@ class ArmStages(object):
             HOME_TIBIA,  # fourth servo value
             OPEN_EFFECTOR  # fifth servo value
         ], block=False, margin=POSITION_MARGIN)
-        #
-        # self.sg.goal_position([
-        #     HOME_BASE,   # first servo value
-        #     sort_femur_1+100,  # second servo value
-        #     sort_femur_2+100,  # third servo value
-        #     HOME_TIBIA,  # fourth servo value
-        #     OPEN_EFFECTOR  # fifth servo value
-        # ], block=False, margin=POSITION_MARGIN)
 
         self.sg.write_values("moving_speed", [200, 200, 200, 200, 200])
         stage_results['slow_down'] = False
