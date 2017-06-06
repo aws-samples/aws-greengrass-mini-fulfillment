@@ -16,19 +16,25 @@
 GGD Button
 This GGD will send "green", "red", or "white" button messages.
 """
+import os
 import json
 import time
 import random
 import socket
-import logging
 import argparse
 import datetime
+import logging
+
+import ggd_config
 from gpiozero import PWMLED, Button
 
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+from mqtt_utils import mqtt_connect
+from ..group_config import GroupConfigFile
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('button')
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
@@ -36,19 +42,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-
-GGD_NAME = "GGD_button"
 GGD_BUTTON_TOPIC = "/button"
-
-mqttc = AWSIoTMQTTClient(GGD_NAME)
-mqttc.configureTlsInsecure(True)
-mqttc.configureEndpoint("localhost", 8883)
-mqttc.configureCredentials(
-    CAFilePath="certs/master-server.crt",
-    KeyPath="certs/GGD_button.private.key",
-    CertificatePath="certs/GGD_button.certificate.pem.crt"
-)
-mqttc.connect()
 
 hostname = socket.gethostname()
 green_led = PWMLED(4)
@@ -57,6 +51,8 @@ red_led = PWMLED(17)
 red_button = Button(6)
 white_led = PWMLED(27)
 white_button = Button(13)
+cfg = None
+ggd_name = 'Empty'
 
 
 def button(sensor_id, toggle):
@@ -67,8 +63,8 @@ def button(sensor_id, toggle):
         val = "off"
 
     msg = {
-        "version": "2016-11-01",
-        "ggd_id": GGD_NAME,
+        "version": "2017-06-08",
+        "ggd_id": ggd_name,
         "hostname": hostname,
         "data": [
             {
@@ -121,6 +117,7 @@ def white_release():
 
 
 def use_box(cli):
+    log.info("[use_box] configuring magic buttons.")
     red_button.when_pressed = red_push
     red_button.when_released = red_release
     green_button.when_pressed = green_push
@@ -128,12 +125,13 @@ def use_box(cli):
     white_button.when_pressed = white_push
     white_button.when_released = white_release
     white_led.on()
+    log.info("[use_box] configured buttons. White LED should now be on.")
     try:
         while 1:
             time.sleep(0.2)
     except KeyboardInterrupt:
         log.info(
-            "[__main__] KeyboardInterrupt ... exiting box monitoring loop")
+            "[use_box] KeyboardInterrupt ... exiting box monitoring loop")
     red_led.off()
     green_led.off()
     white_led.off()
@@ -165,8 +163,10 @@ def button_white(cli):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Sorting Hat GGAD and CLI button',
+        description='Mini Fulfillment GGD and CLI button',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('config_file',
+                        help="The config file.")
     subparsers = parser.add_subparsers()
 
     box_parser = subparsers.add_parser(
@@ -206,7 +206,23 @@ if __name__ == '__main__':
     white_parser.set_defaults(func=button_white, toggle=True)
 
     args = parser.parse_args()
-    args.func(args)
+
+    cfg = GroupConfigFile(args.config_file)
+    ggd_name = cfg['devices']['GGD_button']['thing_name']
+
+
+    mqttc = AWSIoTMQTTClient(ggd_name)
+    mqttc.configureEndpoint(
+        ggd_config.master_core_ip, ggd_config.master_core_port
+    )
+    mqttc.configureCredentials(
+        CAFilePath=dir_path + "/certs/master-server.crt",
+        KeyPath=dir_path + "/certs/GGD_button.private.key",
+        CertificatePath=dir_path + "/certs/GGD_button.certificate.pem.crt"
+    )
+
+    if mqtt_connect(mqttc):
+        args.func(args)
 
     time.sleep(1)
     mqttc.disconnect()
