@@ -24,7 +24,7 @@ aws-greengrass-mini-fulfillment/
   |  +- TROUBLE.md   -- troubleshooting of install and operation
   |
   +- groups/
-  |  +- inv_arm/     -- the directory of the `sort_arm` Greengrass group
+  |  +- inv_arm/     -- the directory of the `inv_arm` Greengrass group
   |  |  +- certs/    -- the group AWS IoT and local certs to be copied to Core
   |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
   |  |     +- certs/ -- the client certs used by GG devices
@@ -39,7 +39,7 @@ aws-greengrass-mini-fulfillment/
   |  |     +- flask/ -- where the web GG device gets files to serve
   |  |     +- servo/ -- the servo communications libraries 
   |  |
-  |  +- sort_arm/    -- the directory of the `inv_arm` Greengrass group
+  |  +- sort_arm/    -- the directory of the `sort_arm` Greengrass group
   |     +- certs/    -- the group AWS IoT and local certs to be copied to Core
   |     +- ggd/      -- the Greengrass Devices that will be run on the Host
   |        +- certs/ -- the client certs used by GG devices
