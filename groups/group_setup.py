@@ -30,8 +30,8 @@ prod_gg_endpoint = "https://greengrass.us-west-2.amazonaws.com"
 gg_client = boto3.client("gg", endpoint_url=prod_gg_endpoint)
 
 
-# TODO revise the thing policy with min privileges required at Greengrass GA.
-# TODO revise the thing policy with min resources required at Greengrass GA
+# TODO revise the thing policy with min privileges required
+# TODO revise the thing policy with min resources required
 def _create_and_attach_thing_policy(config, region):
     if config['core']['thing_name'] is '<device_thing_name>':
         raise ValueError("Config file values seem to be mis-configured.")
