@@ -29,19 +29,19 @@ aws-greengrass-mini-fulfillment/
   |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
   |  |     +- certs/ -- the client certs used by GG devices
   |  |     +- flask/ -- where the web GG device gets files to serve
-  |  |     +- servode/ -- the servo communications libraries 
+  |  |     +- servo/ -- the servo communications libraries 
   |  |
   |  +- sort_arm/    -- the directory of the `inv_arm` Greengrass group
   |  |  +- certs/    -- the group AWS IoT and local certs to be copied to Core
   |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
   |  |     +- certs/ -- the client certs used by GG devices
-  |  |     +- servode/ -- the servo communications libraries 
+  |  |     +- servo/ -- the servo communications libraries 
   |  |
   |  +- inv_arm/     -- the directory of the `sort_arm` Greengrass group
   |  |  +- certs/    -- the group AWS IoT and local certs to be copied to Core
   |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
   |  |     +- certs/ -- the client certs used by GG devices
-  |  |     +- servode/ -- the servo communications libraries 
+  |  |     +- servo/ -- the servo communications libraries 
   |
   +- models/         -- the 3d printing models used to make this demo
   + LICENSE
@@ -144,5 +144,6 @@ the [installation instructions](docs/INSTALL.md) and the
 [Brett Francis](https://github.com/brettf) and [Todd Varland](https://github.com/toddvarland) would like to thank the following. Without their 
 help and existence we simply would not have made it.
 
-    The Francis Family, The Varland Family, ROBOTIS, Pretty Lights, Sigur Ros, 
-    Flume - Insanity, Amazon.com, HBO Silicon Valley, The Greengrass Developers
+    The Francis Family, The Varland Family, ROBOTIS, Servode, Pretty Lights, 
+    Sigur Ros, Flume - Insanity, Amazon.com, HBO Silicon Valley, 
+    The Greengrass Developers
