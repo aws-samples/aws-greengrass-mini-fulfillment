@@ -12,7 +12,8 @@ import dynamixel_functions as dxl
 
 __version__ = '0.1.0'
 
-log = logging.getLogger('servode').addHandler(logging.NullHandler())
+log = logging.getLogger('servode')
+log.addHandler(logging.NullHandler())
 # logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 
 # Protocol version
