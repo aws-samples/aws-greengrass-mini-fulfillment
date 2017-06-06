@@ -86,6 +86,9 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--debug', default=False, action='store_true',
                         help="Activate debug output.")
+    parser.add_argument('config_file',
+                        help="The config file.")
+
     args = parser.parse_args()
     if args.debug:
         log.setLevel(logging.DEBUG)
