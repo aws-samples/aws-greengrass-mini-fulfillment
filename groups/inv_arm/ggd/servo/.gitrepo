@@ -7,5 +7,5 @@
 	remote = https://github.com/brettf/servode.git
 	branch = master
 	commit = 767a117a81c660a39c881333074fefc9b8d61c9f
-	parent = b9e477c1825a9e83fc335a97fbab89fe3c17f03e
+	parent = 870321005140a4fbf924161af8bc84d7fdf1d6a6
 	cmdver = 0.3.1
