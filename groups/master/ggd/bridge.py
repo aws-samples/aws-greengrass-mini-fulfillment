@@ -62,7 +62,7 @@ def init_bridge():
     if mqtt_connect(mqttc_master):
         log.info("[bridge] Connected to Master/Conveyor Core")
     else:
-        log.info("[bridge] could not connect to Master/Conveyor Core")
+        log.error("[bridge] could not connect to Master/Conveyor Core")
 
     log.info("[bridge] Starting connection to Sorting Arm Core")
     if mqtt_connect(mqttc_sort_arm):
@@ -70,7 +70,7 @@ def init_bridge():
             log.info("[bridge] bridging topic:{0}".format(topic))
             mqttc_sort_arm.subscribe(topic, 1, sorting_bridge)
     else:
-        log.info("[bridge] could not connect to Sorting Arm Core")
+        log.error("[bridge] could not connect to Sorting Arm Core")
 
     log.info("[bridge] Starting connection to Inventory Arm Core")
     if mqtt_connect(mqttc_inv_arm):
@@ -78,7 +78,7 @@ def init_bridge():
             log.info("[bridge] bridging topic:{0}".format(topic))
             mqttc_inv_arm.subscribe(topic, 1, inventory_bridge)
     else:
-        log.info("[bridge] could not connect to Inventory Arm Core")
+        log.error("[bridge] could not connect to Inventory Arm Core")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
