@@ -15,9 +15,6 @@
 import os
 import json
 import time
-# import fire
-import random
-import socket
 import argparse
 import datetime as dt
 import logging
@@ -46,9 +43,7 @@ UPLOAD_FOLDER = 'flask/uploads'
 ALLOWED_EXTENSIONS = set('png')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# log = logging.getLogger('web')
 log = app.logger
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
@@ -62,32 +57,12 @@ shady_vals = {}
 topic_cache = cachetools.LRUCache(maxsize=50)
 msg_cache = cachetools.LRUCache(maxsize=100)
 second = timedelta(seconds=1)
-# hz_cache = cachetools.TTLCache(maxsize=60, ttl=60)
 last_hz = 0
 incr_lock = Lock()
 current_hz = 0
 current_hz_time = dt.datetime.utcnow()
 rollover_lock = Lock()
 
-
-# class HertzCounter:
-#     def __init__(self, init_val=0, ts=dt.datetime.utcnow()):
-#         self._lock = Lock()
-#         self.time = ts
-#         self.value = init_val
-#         self.old_value = init_val
-#
-#     def incr(self, increment=1):
-#         with self._lock:
-#             self.value += increment
-#             ts = dt.datetime.utcnow()
-#             print("INCR: ts:{0} self.value:{1}".format(ts, self.value))
-#
-#         return self.value
-#
-#     def increment(self, increment=1):
-#         return self.incr(increment)
-#
 
 def shadow_mgr(payload, status, token):
     if payload == "REQUEST TIME OUT":
@@ -146,46 +121,6 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
-def initialize(config_file):
-    cfg = GroupConfigFile(config_file)
-
-    web_name = cfg['devices']['GGD_web']['thing_name']
-    # get a shadow client to receive commands
-    mqttc_shadow_client = AWSIoTMQTTShadowClient(web_name)
-    # mqttc_shadow_client.configureTlsInsecure(True)
-    mqttc_shadow_client.configureEndpoint("localhost", 8883)
-    mqttc_shadow_client.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
-        KeyPath=dir_path + "/certs/GGD_web.private.key",
-        CertificatePath=dir_path + "/certs/GGD_web.certificate.pem.crt"
-    )
-
-    mqtt_c = mqttc_shadow_client.getMQTTConnection()
-
-    if not mqtt_connect(mqttc_shadow_client):
-        raise EnvironmentError("connection to Master Shadow failed.")
-
-    # create and register the shadow handler on delta topics for commands
-    global master_shadow
-    master_shadow = mqttc_shadow_client.createShadowHandlerWithName(
-        "MasterBrain", True)  # persistent connection with Master Core shadow
-
-    token = master_shadow.shadowGet(shadow_mgr, 5)
-    log.debug("[initialize] shadowGet() tk:{0}".format(token))
-
-    for topic in ggd_config.convey_topics:
-        mqtt_c.subscribe(topic, 1, topic_update)
-        log.info('[initialize] subscribed to topic:{0}'.format(topic))
-
-    for topic in ggd_config.sort_bridge_topics:
-        mqtt_c.subscribe(topic, 1, topic_update)
-        log.info('[initialize] subscribed to topic:{0}'.format(topic))
-
-    for topic in ggd_config.inv_bridge_topics:
-        mqtt_c.subscribe(topic, 1, topic_update)
-        log.info('[initialize] subscribed to topic:{0}'.format(topic))
-
-
 @app.route('/')
 def index():
     freq = 8
@@ -206,7 +141,6 @@ def index():
         "hostname": "sh-pi3b"
     }
 
-
     logs = [{
         "payload": "some message here 1",
         "ts": "2017-05-02T05:30:51.631351"
@@ -222,10 +156,9 @@ def index():
     }]
 
     images = {
-        "sort_arm" : {"url": "https://1"},
+        "sort_arm": {"url": "https://1"},
         "inv_arm": {"url": "https://2"}
     }
-
 
     return render_template(
         'index.html',
@@ -304,21 +237,14 @@ def dashboard():
 
     return render_template('topic.html', topic_dict=topic_dict)
 
-# @app.route('/example/frequency')
-# def example_frequency():
-#     return render_template('frequency.html')
 
 @app.route('/msg/frequency')
 @app.route('/msg/frequency/all')
 def frequency():
-    # js = json.dumps({"frequency": last_hz.value}, sort_keys=False)
     js = json.dumps({"frequency": last_hz}, sort_keys=False)
     return Response(js, status=200, mimetype='application/json')
 
 # TODO add specific station Hz metrics
-# @app.route('/msg/frequency/sort_arm')
-# @app.route('/msg/frequency/inv_arm')
-# @app.route('/msg/frequency/conveyor')
 
 
 @app.route('/msg/history')
@@ -338,13 +264,13 @@ def message_history(count=None):
 
 @app.route('/msg/topic/<path:topic>')
 def latest_message(topic):
-    t = '/' + topic
-    log.debug('[latest_message] get topic:{0}'.format(t))
-    if t in topic_cache:
-        msg = topic_cache[t]
+    top = '/' + topic
+    log.debug('[latest_message] get topic:{0}'.format(top))
+    if top in topic_cache:
+        msg = topic_cache[top]
         return Response(msg, status=200, mimetype='application/json')
     else:
-        return Response("Couldn't find topic:{0}".format(t),
+        return Response("Couldn't find topic:{0}".format(top),
                         status=200,
                         mimetype='application/json')
 
@@ -357,10 +283,48 @@ if __name__ == "__main__":
     parser.add_argument('--debug', default=False, action='store_true',
                         help="Activate debug output.")
     args = parser.parse_args()
-    # cfg = GroupConfigFile(args.config_file)
 
     try:
-        initialize(args.config_file)
+        cfg = GroupConfigFile(args.config_file)
+
+        web_name = cfg['devices']['GGD_web']['thing_name']
+        # get a shadow client to receive commands
+        mqttc_shadow_client = AWSIoTMQTTShadowClient(web_name)
+        mqttc_shadow_client.configureEndpoint(
+            ggd_config.master_core_ip, ggd_config.master_core_port
+        )
+        mqttc_shadow_client.configureCredentials(
+            CAFilePath=dir_path + "/certs/master-server.crt",
+            KeyPath=dir_path + "/certs/GGD_web.private.key",
+            CertificatePath=dir_path + "/certs/GGD_web.certificate.pem.crt"
+        )
+
+        if not mqtt_connect(mqttc_shadow_client):
+            raise EnvironmentError("connection to Master Shadow failed.")
+
+        mqttc = mqttc_shadow_client.getMQTTConnection()
+
+        # create and register the shadow handler on delta topics for commands
+        global master_shadow
+        master_shadow = mqttc_shadow_client.createShadowHandlerWithName(
+            "MasterBrain",
+            True)  # persistent connection with Master Core shadow
+
+        token = master_shadow.shadowGet(shadow_mgr, 5)
+        log.debug("[initialize] shadowGet() tk:{0}".format(token))
+
+        for t in ggd_config.convey_topics:
+            mqttc.subscribe(t, 1, topic_update)
+            log.info('[initialize] subscribed to topic:{0}'.format(t))
+
+        for t in ggd_config.sort_bridge_topics:
+            mqttc.subscribe(t, 1, topic_update)
+            log.info('[initialize] subscribed to topic:{0}'.format(t))
+
+        for t in ggd_config.inv_bridge_topics:
+            mqttc.subscribe(t, 1, topic_update)
+            log.info('[initialize] subscribed to topic:{0}'.format(t))
+
         if args.debug:
             log.setLevel(logging.DEBUG)
 
