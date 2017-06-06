@@ -15,7 +15,6 @@
 import os
 import json
 import time
-# import fire
 import random
 import socket
 import argparse
@@ -31,7 +30,6 @@ from ..group_config import GroupConfigFile
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('heartbeat')
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')

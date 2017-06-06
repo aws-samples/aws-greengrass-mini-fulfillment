@@ -15,7 +15,6 @@
 import os
 import json
 import time
-# import fire
 import random
 import socket
 import argparse
@@ -25,12 +24,12 @@ import logging
 import ggd_config
 
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+from mqtt_utils import mqtt_connect
 from ..group_config import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('heartbeat')
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
@@ -41,28 +40,10 @@ log.setLevel(logging.DEBUG)
 GGD_HEARTBEAT_TOPIC = "/heart/beat"
 
 
-def mqtt_connect(client):
-    connected = False
-    try:
-        client.connect()
-        connected = True
-    except socket.error as se:
-        print("SE:{0}".format(se))
-        # TODO add some retry logic
-    return connected
+def heartbeat(config_file, frequency=3):
+    cfg = GroupConfigFile(config_file)
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(
-        description='SH Arm control and telemetry',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('config_file',
-                        help="The config file.")
-
-    args = parser.parse_args()
-    cfg = GroupConfigFile(args.config_file)
-
-    heartbeat_name = cfg['GGD_heartbeat']['thing_name']
+    heartbeat_name = cfg['devices']['GGD_heartbeat']['thing_name']
     mqttc = AWSIoTMQTTClient(heartbeat_name)
     # mqttc.configureTlsInsecure(True)
     mqttc.configureEndpoint(ggd_config.inv_arm_ip, ggd_config.inv_arm_port)
@@ -82,7 +63,7 @@ if __name__ == "__main__":
 
                 now = datetime.datetime.now()
                 msg = {
-                    "version": "2016-11-01",
+                    "version": "2017-06-08",
                     "ggd_id": heartbeat_name,
                     "hostname": hostname,
                     "data": [
@@ -108,3 +89,12 @@ if __name__ == "__main__":
     else:
         print("[hb] could not connect successfully via mqtt.")
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Greengrass device that generates heartbeat messages',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('config_file',
+                        help="The config file.")
+
+    args = parser.parse_args()
+    heartbeat(config_file=args.config_file)
