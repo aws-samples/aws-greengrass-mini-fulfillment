@@ -570,20 +570,25 @@ def create_function_definition(group_type, config):
     # first determine the latest versions of configured Lambda functions
     for key in config['lambda_functions']:
         lambda_name = key
-        version_definition = aws.list_versions_by_function(FunctionName=lambda_name)
-        sv = sorted(version_definition['Versions'], key=itemgetter('Version'),
-                    reverse=True)
-        # use zero'th function version as the most recent by above `sorted`
-        fv = sv[0]
-        logging.info("Found latest function version: {0}".format(fv))
-        latest_funcs[lambda_name] = {"arn": fv['FunctionArn']}  # config file
+        a = aws.list_aliases(FunctionName=lambda_name)
+        # assume only one Alias associated with the Lambda function
+        alias_arn = a['Aliases'][0]['AliasArn']
+        logging.info("function {0}, found aliases: {1}".format(
+            lambda_name, a)
+        )
+
+        # get the function pointed to by the alias
+        # TODO Qualifier should be the lambda_cfg.json lambda_alias value
+        f = aws.get_function(FunctionName=lambda_name, Qualifier='mini')
+        logging.info("retrieved function config: {0}".format(f['Configuration']))
+        latest_funcs[lambda_name] = {"arn": alias_arn}
         func_definition.append({
             "Id": "{0}".format(lambda_name.lower()),
-            "FunctionArn": fv['FunctionArn'],
+            "FunctionArn": alias_arn,
             "FunctionConfiguration": {
-                "Executable": fv['Handler'],
-                "MemorySize": fv['MemorySize'],
-                "Timeout": fv['Timeout']
+                "Executable": f['Configuration']['Handler'],
+                "MemorySize": int(f['Configuration']['MemorySize']) * 1000,
+                "Timeout": int(f['Configuration']['Timeout'])
             }
         })  # function definition
 
