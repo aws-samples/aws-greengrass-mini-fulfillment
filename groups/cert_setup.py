@@ -3,16 +3,6 @@
 from OpenSSL import crypto
 import argparse
 
-# import socket
-# host_ip = \
-#     [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]
-#                   if not ip.startswith("127.")][:1], [
-#                      [(s.connect(('8.8.8.8', 53)), s.getsockname()[0],
-#                        s.close()) for s in
-#                       [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][
-#                          0][1]
-#                  ]) if l][0][0]
-
 
 def create_group_cert(cli):
     k = crypto.PKey()
@@ -21,9 +11,9 @@ def create_group_cert(cli):
     cert = crypto.X509()
     cert.get_subject().countryName = "US"
     cert.get_subject().stateOrProvinceName = "CA"
-    cert.get_subject().organizationName = "gg-mini-fulfillment"
+    cert.get_subject().organizationName = "mini-fulfillment"
     cert.get_subject().organizationalUnitName = "demo"
-    cert.get_subject().commonName = "gg-mini-fulfillment"
+    cert.get_subject().commonName = "mini-fulfillment"
     cert.set_serial_number(1000)
     cert.gmtime_adj_notBefore(0)
     cert.gmtime_adj_notAfter(5 * 365 * 24 * 60 * 60)  # 5 year expiry date
