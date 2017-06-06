@@ -19,16 +19,15 @@ This GGD will send "green", "red", or "white" button messages.
 import os
 import json
 import time
-import random
 import socket
 import argparse
 import datetime
 import logging
 
-import ggd_config
 from gpiozero import PWMLED, Button
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+import ggd_config
 from mqtt_utils import mqtt_connect
 from ..group_config import GroupConfigFile
 
@@ -209,7 +208,6 @@ if __name__ == '__main__':
 
     cfg = GroupConfigFile(args.config_file)
     ggd_name = cfg['devices']['GGD_button']['thing_name']
-
 
     mqttc = AWSIoTMQTTClient(ggd_name)
     mqttc.configureEndpoint(
