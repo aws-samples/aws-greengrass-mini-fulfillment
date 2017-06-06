@@ -6,6 +6,6 @@
 [subrepo]
 	remote = https://github.com/brettf/servode.git
 	branch = master
-	commit = 767a117a81c660a39c881333074fefc9b8d61c9f
-	parent = 0650a1af3ca55e661cb6bf0b2d8d84feb455fb45
+	commit = 28bda411b32b3f6e8451989a14b7eac53282337c
+	parent = e03cf5ed5246845dd88742939998e3b3212f2166
 	cmdver = 0.3.1

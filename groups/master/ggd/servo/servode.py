@@ -8,13 +8,12 @@ import datetime
 import argparse
 import threading
 import collections
-import dynamixel_functions as dxl
+from .dynamixel_functions import *
 
 __version__ = '0.1.0'
 
 log = logging.getLogger('servode')
 log.addHandler(logging.NullHandler())
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 
 # Protocol version
 PROTOCOL_V = 1  # Set protocol version used with the Dynamixel AX-12
@@ -610,21 +609,21 @@ class ServoProtocol(object):
         self.lock = lock
         self.baud_rate = baud_rate
         self.manufacturer = manufacturer
-        self.port_num = dxl.portHandler(DEVICENAME)
-        dxl.packetHandler()  # Initialize PacketHandler Structs
+        self.port_num = portHandler(DEVICENAME)
+        packetHandler()  # Initialize PacketHandler Structs
 
     def __enter__(self):
         log.debug("[ServoProtocol.__enter__] Connection information")
 
         # Open port
-        if dxl.openPort(self.port_num):
+        if openPort(self.port_num):
             log.debug("[ServoProtocol.__enter__] opened port:{0}".format(
                 self.port_num))
         else:
             raise IOError("[ServoProtocol.__enter__] Failed to open the port!")
 
         # Set port baudrate to PERM
-        if dxl.setBaudRate(self.port_num, self.baud_rate):
+        if setBaudRate(self.port_num, self.baud_rate):
             log.debug("[ServoProtocol.__enter__] Set baud rate to: {0}".format(
                 self.baud_rate))
         else:
@@ -636,7 +635,7 @@ class ServoProtocol(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         log.debug("[ServoProtocol.__exit__] closing dxl port")
-        dxl.closePort(self.port_num)
+        closePort(self.port_num)
         # self.lock.release()
 
     def factory_reset(self, servo):
@@ -651,19 +650,19 @@ class ServoProtocol(object):
             sid = servo
 
         log.debug("[factory_reset] Try reset:{0}".format(sid))
-        dxl.factoryReset(self.port_num, self.protocol_version, sid, 0x00)
+        factoryReset(self.port_num, self.protocol_version, sid, 0x00)
         with self.lock:
-            last_result = dxl.getLastTxRxResult(
+            last_result = getLastTxRxResult(
                 self.port_num, self.protocol_version)
             if last_result != COMM_SUCCESS:
                 log.error("[factory_reset] Aborted")
-                dxl.printTxRxResult(self.protocol_version, last_result)
+                printTxRxResult(self.protocol_version, last_result)
 
-            error_result = dxl.getLastRxPacketError(
+            error_result = getLastRxPacketError(
                 self.port_num, self.protocol_version)
             if error_result:
                 self._result_to_status(error_result)
-                dxl.printRxPacketError(self.protocol_version, error_result)
+                printRxPacketError(self.protocol_version, error_result)
                 log.error("[factory_reset] Error:{0}".format(error_result))
 
         # Wait for reset
@@ -683,21 +682,21 @@ class ServoProtocol(object):
             sid = servo
 
         with self.lock:
-            dxl_model_number = dxl.pingGetModelNum(
+            dxl_model_number = pingGetModelNum(
                 self.port_num, self.protocol_version, sid)
 
-            last_result = dxl.getLastTxRxResult(self.port_num,
+            last_result = getLastTxRxResult(self.port_num,
                                                 self.protocol_version)
             if last_result != COMM_SUCCESS:
-                dxl.printTxRxResult(self.protocol_version, last_result)
+                printTxRxResult(self.protocol_version, last_result)
                 log.error(
                     "[ping] Communication unsuccessful:{0}".format(last_result))
 
-            error_result = dxl.getLastRxPacketError(
+            error_result = getLastRxPacketError(
                 self.port_num, self.protocol_version)
             if error_result:
                 self._result_to_status(error_result)
-                dxl.printRxPacketError(self.protocol_version, error_result)
+                printRxPacketError(self.protocol_version, error_result)
                 log.error("[ping] Error:{0}".format(error_result))
 
         return dxl_model_number
@@ -725,31 +724,31 @@ class ServoProtocol(object):
 
         with self.lock:
             if dxl_control[register]['comm_bytes'] == 1:
-                value = dxl.read1ByteTxRx(
+                value = read1ByteTxRx(
                     self.port_num, self.protocol_version, sid,
                     dxl_control[register]['address']
                 )
             elif dxl_control[register]['comm_bytes'] == 2:
-                value = dxl.read2ByteTxRx(
+                value = read2ByteTxRx(
                     self.port_num, self.protocol_version, sid,
                     dxl_control[register]['address']
                 )
 
-            last_result = dxl.getLastTxRxResult(
+            last_result = getLastTxRxResult(
                 self.port_num, self.protocol_version
             )
             if last_result != COMM_SUCCESS:
-                dxl.printTxRxResult(self.protocol_version, last_result)
+                printTxRxResult(self.protocol_version, last_result)
                 log.error("[read_register] Comm unsuccessful:{0}".format(
                     last_result))
 
             # Comms might be successful but we could still be in an error
             # state. So, check for error packet after every read
-            error_result = dxl.getLastRxPacketError(
+            error_result = getLastRxPacketError(
                 self.port_num, self.protocol_version)
             if error_result:
                 result['status'] = self._result_to_status(error_result)
-                dxl.printRxPacketError(self.protocol_version, error_result)
+                printRxPacketError(self.protocol_version, error_result)
                 log.error("[read_register] Error:{0}".format(error_result))
             else:
                 log.debug(
@@ -784,14 +783,14 @@ class ServoProtocol(object):
             raise NotImplementedError("AX-12 Servos do not support bulk_read.")
 
         response = {"blocks": []}
-        group_num = dxl.groupBulkRead(self.port_num, self.protocol_version)
+        group_num = groupBulkRead(self.port_num, self.protocol_version)
         log.info("[bulk_read] read group_num:{0}".format(group_num))
 
         for block in read_blocks['blocks']:
             # loop through blocks to add each as a param to the bulk_read group
             sid = block['servo_id']
             register = block['register']
-            last_result = dxl.groupBulkReadAddParam(
+            last_result = groupBulkReadAddParam(
                 group_num, sid,
                 dxl_control[register]['address'],
                 dxl_control[register]['comm_bytes']
@@ -803,19 +802,19 @@ class ServoProtocol(object):
                 log.error(err)
                 raise IOError(err)
 
-        dxl.groupBulkReadTxRxPacket(group_num)
+        groupBulkReadTxRxPacket(group_num)
         ts = datetime.datetime.now().isoformat()
 
-        last_result = dxl.getLastTxRxResult(self.port_num,
+        last_result = getLastTxRxResult(self.port_num,
                                             self.protocol_version)
         if last_result != COMM_SUCCESS:
-            dxl.printTxRxResult(self.protocol_version, last_result)
+            printTxRxResult(self.protocol_version, last_result)
 
         for block in read_blocks['blocks']:
             # loop through each block to see if the bulk result is available
             sid = block['servo_id']
             register = block['register']
-            last_result = dxl.groupBulkReadIsAvailable(
+            last_result = groupBulkReadIsAvailable(
                 group_num, sid,
                 dxl_control[register]['address'],
                 dxl_control[register]['comm_bytes']
@@ -831,7 +830,7 @@ class ServoProtocol(object):
         for block in read_blocks['blocks']:
             sid = block['servo_id']
             register = block['register']
-            val = dxl.groupBulkReadGetData(
+            val = groupBulkReadGetData(
                 group_num, sid,
                 dxl_control[register]['address'],
                 dxl_control[register]['comm_bytes']
@@ -871,29 +870,29 @@ class ServoProtocol(object):
                     "register:'{0}' cannot be written".format(register))
 
             if dxl_control[register]['comm_bytes'] == 1:
-                dxl.write1ByteTxRx(
+                write1ByteTxRx(
                     self.port_num, self.protocol_version, sid,
                     dxl_control[register]['address'], value)
             elif dxl_control[register]['comm_bytes'] == 2:
-                dxl.write2ByteTxRx(
+                write2ByteTxRx(
                     self.port_num, self.protocol_version, sid,
                     dxl_control[register]['address'], value)
 
-            last_result = dxl.getLastTxRxResult(
+            last_result = getLastTxRxResult(
                 self.port_num, self.protocol_version
             )
             if last_result != COMM_SUCCESS:
-                dxl.printTxRxResult(self.protocol_version, last_result)
+                printTxRxResult(self.protocol_version, last_result)
                 log.error("[write_register] Comm unsuccessful:{0}".format(
                     last_result))
 
             # Comms might be successful but we could still be in an error
             # state. So, check for error packet after every read
-            error_result = dxl.getLastRxPacketError(
+            error_result = getLastRxPacketError(
                 self.port_num, self.protocol_version)
             if error_result:
                 result['status'] = self._result_to_status(error_result)
-                dxl.printRxPacketError(self.protocol_version, error_result)
+                printRxPacketError(self.protocol_version, error_result)
                 log.error("[write_register] Error:{0}".format(error_result))
             else:
                 log.debug(
@@ -913,7 +912,7 @@ class ServoProtocol(object):
         """
         result = False
         with self.lock:
-            group_num = dxl.groupSyncWrite(
+            group_num = groupSyncWrite(
                 self.port_num, self.protocol_version,
                 dxl_control[register]['address'],
                 dxl_control[register]['comm_bytes']
@@ -928,7 +927,7 @@ class ServoProtocol(object):
                 else:
                     sid = servo
 
-                add_parm = dxl.groupSyncWriteAddParam(
+                add_parm = groupSyncWriteAddParam(
                     group_num, sid,
                     value,
                     dxl_control[register]['comm_bytes']
@@ -941,13 +940,13 @@ class ServoProtocol(object):
                 else:
                     log.debug("[sync_write] added param to sync write")
 
-            dxl.groupSyncWriteTxPacket(group_num)
+            groupSyncWriteTxPacket(group_num)
 
-            last_result = dxl.getLastTxRxResult(
+            last_result = getLastTxRxResult(
                 self.port_num, self.protocol_version
             )
             if last_result != COMM_SUCCESS:
-                dxl.printTxRxResult(self.protocol_version, last_result)
+                printTxRxResult(self.protocol_version, last_result)
                 log.error(
                     "[sync_write] Comm unsuccessful:{0}".format(last_result))
             else:
