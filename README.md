@@ -6,12 +6,13 @@ Greengrass when announced. It has since been upgraded to use the publicly availa
 version of Greengrass.
  
 A [video](https://youtu.be/XQQjX8GTEko?t=27m27s) was taken of the completed and 
-operational Greengrass-based miniature fulfillment center demo in action at re:Invent.
+operational Greengrass-based miniature fulfillment center, a.k.a. "dual robot arm demo" 
+in action at re:Invent.
 
-All the artifacts, code, and instructions to make this demo are now 
-available in this repo. We look forward to seeing what you'll do with it.
+The artifacts, code, and instructions to make this demo are now available in this 
+repo. We look forward to seeing what you'll do with it.
 
-### Directory Structure
+#### Directory Structure
 ```
 aws-greengrass-mini-fulfillment/
   +- docs/
@@ -23,7 +24,14 @@ aws-greengrass-mini-fulfillment/
   |  +- TROUBLE.md   -- troubleshooting of install and operation
   |
   +- groups/
-  |  +- lambda/      -- the Lambda functions to be used in the GGCores
+  |  +- inv_arm/     -- the directory of the `sort_arm` Greengrass group
+  |  |  +- certs/    -- the group AWS IoT and local certs to be copied to Core
+  |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
+  |  |     +- certs/ -- the client certs used by GG devices
+  |  |     +- servo/ -- the servo communications libraries 
+  |  | 
+  |  +- lambda/      -- the Lambda functions used in the Greengrass groups
+  |  |
   |  +- master/      -- the directory of the `master` Greengrass group 
   |  |  +- certs/    -- the group AWS IoT and local certs to be copied to Core
   |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
@@ -32,18 +40,12 @@ aws-greengrass-mini-fulfillment/
   |  |     +- servo/ -- the servo communications libraries 
   |  |
   |  +- sort_arm/    -- the directory of the `inv_arm` Greengrass group
-  |  |  +- certs/    -- the group AWS IoT and local certs to be copied to Core
-  |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
-  |  |     +- certs/ -- the client certs used by GG devices
-  |  |     +- servo/ -- the servo communications libraries 
-  |  |
-  |  +- inv_arm/     -- the directory of the `sort_arm` Greengrass group
   |     +- certs/    -- the group AWS IoT and local certs to be copied to Core
   |     +- ggd/      -- the Greengrass Devices that will be run on the Host
   |        +- certs/ -- the client certs used by GG devices
   |        +- servo/ -- the servo communications libraries 
   |
-  +- models/         -- the 3d printing models used to make this demo
+  +- models/         -- the models used to 3D print components of this demo
   + LICENSE
   + README.md -- this file
   + requirements.txt
@@ -55,18 +57,18 @@ There are three Greengrass Groups named:
 
 | Group | Host Name | Description |
 | :---: | :---: | :--- |
+| `inv_arm` | `inv_arm-pi` | contains the Inventory Arm devices and the Inventory Arm Core |
 | `master` | `master-pi` | contains both the Conveyor Belt devices and the Master Core |
 | `sort_arm` | `sort_arm-pi` | contains the Sorting Arm devices and the Sort Arm Core |
-| `inv_arm` | `inv_arm-pi` | contains the Inventory Arm devices and the Inventory Arm Core |
 
 The demo behavior is broken into the concept of a series of simple control stages 
 organized by Group. Those stages are:
 
 | Group | Control Stages |
 | :--- | :--- |
-| **Sorting** | `... > Home > Finding > Pickup > Sorting > Home > ...` |
-| **Master** | `..conveyor direction..` |
 | **Inventory** | `... > Home > Finding > Pickup > Shipping > Home > ...` |
+| **Master** | `..conveyor direction..` |
+| **Sorting** | `... > Home > Finding > Pickup > Sorting > Home > ...` |
 
 As shown in the video above, even with these simple stages the interaction between 
 the three Groups displays complex, cohesive, and coordinated behaviors.
@@ -79,7 +81,7 @@ shadows.
 The high-level, local architecture of the demo is:
 ![mini-fulfillment demo architecture](docs/img/demo-architecture.png)
 
-### Master/Conveyor Host
+#### Master/Conveyor Host
 There are five processes on this host:
 - the Master Greengrass Core
 - the `heartbeat` Greengrass Device (GGD) process
@@ -94,19 +96,10 @@ Within the Master Core, these are the Lambda functions:
   bridges and the local GGDs. This function will decide what to do with respect 
   to current telemetry and errors in the system
 
-There is a web visualization on this host. If one browses to: `<master_ip>:8000` a 
+There is a web visualization on this host. If one browses to: `<master_ip>:5000` a 
 visualization that reads data from the Master Core can be seen. 
 
-### Sorting Arm Host
-There are three processes on this host:
-- the Sorting Arm Greengrass Core
-- the `heartbeat` Greengrass Device (GGD) process
-- the `arm` GGD process
-
-Within the Sort Arm Core, this is the Lambda function:
-- `ArmErrorDetector` -- this function monitors local telemetry and detects any error states
-
-### Inventory Arm Host
+#### Inventory Arm Host
 There are three processes on this host:
 - the Inventory Arm Greengrass Core
 - the `heartbeat` Greengrass Device (GGD) process
@@ -115,7 +108,17 @@ There are three processes on this host:
 Within the Inventory Arm Core, this is the Lambda function:
 - `ArmErrorDetector` -- this function monitors local telemetry and detects any error states
 
-### Noteworthy Files
+#### Sorting Arm Host
+There are three processes on this host:
+- the Sorting Arm Greengrass Core
+- the `heartbeat` Greengrass Device (GGD) process
+- the `arm` GGD process
+
+Within the Sort Arm Core, this is the Lambda function:
+- `ArmErrorDetector` -- this function monitors local telemetry and detects any error states
+
+
+#### Noteworthy Files
 There are some noteworthy files in the repository that centralize a fair amount 
 of work around the instantiation of this demonstration.
 - `groups/group_setup.py` – performs all provisioning of each host's Greengrass Group. 
@@ -126,7 +129,7 @@ demonstrate the use of the Greengrass REST APIs.
     artifacts (i.e. `GroupID`, `CoreDefinitionId`, etc.) in the local configuration file.
     - `deploy <host_type> <config_file>` – deploys a previously provisioned 
     Greengrass Group
-    - `clean_all <config_file>` – cleans up the entirety of an *un-deployed* 
+    - `clean_all <config_file>` – cleans up the entirety of an **un-deployed** 
     Greengrass Group and the locally stored provisioning artifacts.
 - `groups/cert_setup.py` – creates a Certificate Authority (CA) and server certificate 
 for use locally on each host. These protect communication between the Greengrass 
@@ -141,8 +144,7 @@ the [installation instructions](docs/INSTALL.md) and the
 
 ## Special Thanks
 [Brett Francis](https://github.com/brettf) and [Todd Varland](https://github.com/toddvarland) would like to thank the following. Without their 
-help and existence we simply would not have made it.
+help and existence we simply would not have made this demo.
 
-    The Francis Family, The Varland Family, ROBOTIS, Servode, Pretty Lights, 
-    Sigur Ros, Flume - Insanity, Amazon.com, HBO Silicon Valley, 
-    The Greengrass Developers
+> **The Francis Family, The Varland Family, [ROBOTIS](https://github.com/ROBOTIS-GIT/DynamixelSDK), [Servode](https://github.com/brettf/servode), Pretty Lights, 
+ Sigur Ros, Flume - Insanity, Amazon.com, HBO Silicon Valley, The [Greengrass](https://aws.amazon.com/greengrass/) Developers**
