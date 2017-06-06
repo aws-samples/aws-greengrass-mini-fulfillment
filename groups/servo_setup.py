@@ -20,9 +20,9 @@ import requests
 
 dl_name = "dxl_v3_4_3.zip"
 url = "https://github.com/ROBOTIS-GIT/DynamixelSDK/archive/3.4.3.zip"
-inv_arm_dir = "inv_arm/ggd/servode"
-sort_arm_dir = "sort_arm/ggd/servode"
-master_dir = "master/ggd/servode"
+inv_arm_dir = "inv_arm/ggd/servo"
+sort_arm_dir = "sort_arm/ggd/servo"
+master_dir = "master/ggd/servo"
 
 print("[begin] Downloading Dynamixel SDK: {0}".format(url))
 r = requests.get(url, stream=True)
