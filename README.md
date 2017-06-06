@@ -38,16 +38,15 @@ aws-greengrass-mini-fulfillment/
   |  |     +- servo/ -- the servo communications libraries 
   |  |
   |  +- inv_arm/     -- the directory of the `sort_arm` Greengrass group
-  |  |  +- certs/    -- the group AWS IoT and local certs to be copied to Core
-  |  |  +- ggd/      -- the Greengrass Devices that will be run on the Host
-  |  |     +- certs/ -- the client certs used by GG devices
-  |  |     +- servo/ -- the servo communications libraries 
+  |     +- certs/    -- the group AWS IoT and local certs to be copied to Core
+  |     +- ggd/      -- the Greengrass Devices that will be run on the Host
+  |        +- certs/ -- the client certs used by GG devices
+  |        +- servo/ -- the servo communications libraries 
   |
   +- models/         -- the 3d printing models used to make this demo
   + LICENSE
   + README.md -- this file
   + requirements.txt
-  + TIDBITS.md
 ```
 
 After following the [installation instructions](docs/INSTALL.md), each directory 
