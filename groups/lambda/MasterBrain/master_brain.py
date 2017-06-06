@@ -152,5 +152,3 @@ def handler(event, context):
     else:
         log.error("[handler] unknown ggd_id:{0}".format(ggd_id))
 
-    # TODO act upon errors received from each station
-
