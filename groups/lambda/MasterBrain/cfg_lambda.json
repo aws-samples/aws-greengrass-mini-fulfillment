@@ -1,0 +1,11 @@
+{
+  "func_name": "MasterBrain",
+  "func_desc": "mini-fulfillment function for overall demo flow",
+  "lambda_alias": "mini",
+  "lambda_dir": "MasterBrain",
+  "lambda_handler": "handler",
+  "lambda_main": "master_brain",
+  "lambda_files": [
+    "master_brain.py"
+  ]
+}
