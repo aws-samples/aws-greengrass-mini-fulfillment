@@ -23,7 +23,7 @@ import logging
 
 from cachetools import TTLCache
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
-from servode import Servo, ServoGroup, ServoProtocol
+from ..servo.servode import ServoProtocol
 
 import ggd_config
 from mqtt_utils import mqtt_connect
@@ -334,13 +334,13 @@ if __name__ == "__main__":
     token = master_shadow.shadowGet(shadow_mgr, 5)
     log.debug("[initialize] shadowGet() tk:{0}".format(token))
 
-    with ServoProtocol() as sproto:
+    with servode.ServoProtocol() as sproto:
         for servo_id in belt_ids:
             sproto.ping(servo=servo_id)
 
-    with ServoProtocol() as sp:
-        sg = ServoGroup()
-        sg['bone'] = Servo(sp, belt_ids[0], bone_servo_cache)
+    with servode.ServoProtocol() as sp:
+        sg = servode.ServoGroup()
+        sg['bone'] = servode.Servo(sp, belt_ids[0], bone_servo_cache)
 
         # Use same Group with one read cache because only monitor thread reads
         btt = BeltTelemetryThread(sg, frequency=args.frequency)
