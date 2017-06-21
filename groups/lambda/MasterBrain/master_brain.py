@@ -1,6 +1,7 @@
 from __future__ import print_function
 import json
 import logging
+import datetime
 import greengrasssdk
 
 log = logging.getLogger('brain')
@@ -11,9 +12,20 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-GGC_THING_NAME = "MasterBrain"
+GGC_SHADOW_NAME = "MasterBrain"
 
 gg_client = greengrasssdk.client('iot-data')
+
+# update shadow when Lambda instantiated to ensure GET returns info to devices
+gg_client.update_thing_shadow(
+    thingName=GGC_SHADOW_NAME, payload=json.dumps({
+        "state": {
+            "reported": {
+                "lambda_start": datetime.datetime.now().isoformat()
+            }
+        }
+    }).encode()
+)
 
 
 def handle_arm_stage(ggd_id, msg):
@@ -25,7 +37,7 @@ def handle_arm_stage(ggd_id, msg):
             log.info("[handle_arm_stage] GGD_sort_arm PICK BEGIN >> CHANGE DIRECTION")
             # Conveying "away" from sort arm is convey_reverse=False
             gg_client.update_thing_shadow(
-                thingName=GGC_THING_NAME, payload=json.dumps({
+                thingName=GGC_SHADOW_NAME, payload=json.dumps({
                     "state": {
                         "desired": {
                             "convey_reverse": False
@@ -43,7 +55,7 @@ def handle_arm_stage(ggd_id, msg):
             )
             # Conveying "away" from inv arm is convey_reverse=True
             gg_client.update_thing_shadow(
-                thingName=GGC_THING_NAME, payload=json.dumps({
+                thingName=GGC_SHADOW_NAME, payload=json.dumps({
                     "state": {
                         "desired": {
                             "convey_reverse": True
@@ -66,7 +78,7 @@ def handle_button(msg):
         log.info(
             "[handle_button] button id:'{0}' start_cmd".format(button_id))
         gg_client.update_thing_shadow(
-            thingName=GGC_THING_NAME, payload=json.dumps({
+            thingName=GGC_SHADOW_NAME, payload=json.dumps({
                 "state": {
                     "desired": {
                         "convey_cmd": "run",
@@ -80,7 +92,7 @@ def handle_button(msg):
         log.info(
             "[handle_button] button id:'{0}' stop_cmd".format(button_id))
         gg_client.update_thing_shadow(
-            thingName=GGC_THING_NAME, payload=json.dumps({
+            thingName=GGC_SHADOW_NAME, payload=json.dumps({
                 "state": {
                     "desired": {
                         "convey_cmd": "stop",
@@ -96,7 +108,7 @@ def handle_button(msg):
                 button_id
             ))
         gg_client.update_thing_shadow(
-            thingName=GGC_THING_NAME, payload=json.dumps({
+            thingName=GGC_SHADOW_NAME, payload=json.dumps({
                 "state": {
                     "desired": {
                         "convey_reverse": 1
@@ -110,7 +122,7 @@ def handle_button(msg):
                 button_id
             ))
         gg_client.update_thing_shadow(
-            thingName=GGC_THING_NAME, payload=json.dumps({
+            thingName=GGC_SHADOW_NAME, payload=json.dumps({
                 "state": {
                     "desired": {
                         "convey_reverse": 0

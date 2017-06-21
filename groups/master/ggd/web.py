@@ -66,7 +66,7 @@ rollover_lock = Lock()
 
 def shadow_mgr(payload, status, token):
     if payload == "REQUEST TIME OUT":
-        log.debug(
+        log.info(
             "[shadow_mgr] shadow 'REQUEST TIME OUT' tk:{0}".format(
                 token))
         return
@@ -186,6 +186,11 @@ def get_shadow():
     token = master_shadow.shadowGet(shadow_mgr, 5)
     log.debug("[get_shadow] shadowGet() tk:{0}".format(token))
     return 'Sent request to get MasterBrain shadow'
+
+
+@app.route('/shadow/read')
+def get_shadow():
+    return shady_vals
 
 
 @app.route('/upload', methods=['POST'])

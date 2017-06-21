@@ -12,9 +12,9 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+import os
 import json
 import time
-import socket
 import requests
 import logging
 import argparse
@@ -25,13 +25,16 @@ from cachetools import TTLCache
 from requests import ConnectionError
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, AWSIoTMQTTShadowClient
 
-import config
-from stages import ArmStages, NO_BOX_FOUND
+import ggd_config
+from mqtt_utils import mqtt_connect
+from ..group_config import GroupConfigFile
 
-from servode import Servo, ServoProtocol, ServoGroup
+from stages import ArmStages, NO_BOX_FOUND
+from servo.servode import Servo, ServoProtocol, ServoGroup
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('arm')
-# logging.basicConfig(datefmt='%(asctime)s - %(name)s:%(levelname)s: %(message)s')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
@@ -39,7 +42,6 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-GGD_NAME = "GGD_inv_arm"
 SORT_TELEMETRY_TOPIC = "/invarm/telemetry"
 SORT_ERRORS_TOPIC = "/invarm/errors"
 STAGE_TOPIC = "/invarm/stages"
@@ -48,27 +50,9 @@ commands = ['run', 'stop']
 
 should_loop = True
 
-mqttc = AWSIoTMQTTClient(GGD_NAME)
-mqttc.configureTlsInsecure(True)  # TODO update local approach to certs
-mqttc.configureEndpoint("localhost", 8883)
-mqttc.configureCredentials(
-    CAFilePath="certs/ca.crt",
-    KeyPath="certs/client.key",
-    CertificatePath="certs/client.crt"
-)
-
-# get a shadow client to receive commands
-mstr_shadow_client = AWSIoTMQTTShadowClient(GGD_NAME)
-mstr_shadow_client.configureTlsInsecure(True)
-mstr_shadow_client.configureEndpoint(
-    config.master_core_ip, config.master_core_port
-)
-mstr_shadow_client.configureCredentials(
-    CAFilePath="certs/ca.crt",
-    KeyPath="certs/client.key",
-    CertificatePath="certs/client.crt"
-)
-
+mqttc = None
+mstr_shadow_client = None
+ggd_name = 'Empty'
 master_shadow = None
 cmd_event = threading.Event()
 cmd_event.clear()
@@ -80,39 +64,51 @@ tibia_servo_cache = TTLCache(maxsize=32, ttl=120)
 eff_servo_cache = TTLCache(maxsize=32, ttl=120)
 
 
-def mqtt_connect(client):
-    connected = False
-    try:
-        client.connect()
-        connected = True
-    except socket.error as se:
-        print("SE:{0}".format(se))
-        # TODO add some retry logic
-    return connected
-
-
 def shadow_mgr(payload, status, token):
     log.info("[shadow_mgr] shadow payload:{0} token:{1}".format(
         json.dumps(json.loads(payload), sort_keys=True), token))
 
 
 def initialize():
+    global mqttc
+    mqttc = AWSIoTMQTTClient(ggd_name)
+    mqttc.configureEndpoint(
+        ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
+    mqttc.configureCredentials(
+        CAFilePath=dir_path + "/certs/inv_arm-server.crt",
+        KeyPath=dir_path + "/certs/GGD_arm.private.key",
+        CertificatePath=dir_path + "/certs/GGD_arm.certificate.pem.crt"
+    )
+
+    global mstr_shadow_client
+    # get a shadow client to receive commands
+    mstr_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
+    mstr_shadow_client.configureEndpoint(
+        ggd_config.master_core_ip, ggd_config.master_core_port
+    )
+    mstr_shadow_client.configureCredentials(
+        CAFilePath=dir_path + "/certs/master-server.crt",
+        KeyPath=dir_path + "/certs/GGD_arm.private.key",
+        CertificatePath=dir_path + "/certs/GGD_arm.certificate.pem.crt"
+    )
+
     if not mqtt_connect(mqttc):
         raise EnvironmentError("connection to GG Core MQTT failed.")
     if not mqtt_connect(mstr_shadow_client):
         raise EnvironmentError("connection to Master Shadow failed.")
 
-    # create and register the shadow handler on delta topics for commands
     global master_shadow
+    # create and register the shadow handler on delta topics for commands
+    # with a persistent connection to the Master shadow
     master_shadow = mstr_shadow_client.createShadowHandlerWithName(
-        "SHMasterCore", True)  # persistent connection with SHMasterCore shadow
+        ggd_config.master_shadow_name, True)
 
     token = master_shadow.shadowGet(shadow_mgr, 5)
     log.info("[initialize] shadowGet() tk:{0}".format(token))
 
     with ServoProtocol() as sproto:
         # TODO ensure Baud rate is maxed
-        for servo_id in config.arm_servo_ids:
+        for servo_id in ggd_config.arm_servo_ids:
             sproto.ping(servo=servo_id)
 
 
@@ -122,7 +118,7 @@ def _stage_message(stage, text='', stage_result=None):
         "addl_text": text,
         "stage_result": stage_result,
         "ts": datetime.datetime.now().isoformat(),
-        "ggd_id": GGD_NAME
+        "ggd_id": ggd_name
     })
 
 
@@ -151,9 +147,9 @@ def _arm_message(servo_group):
         })
 
     msg = {
-        "version": "2016-11-01",
+        "version": "2017-06-08",
         "data": data,
-        "ggad_id": GGD_NAME
+        "ggad_id": ggd_name
     }
     return msg
 
@@ -262,8 +258,8 @@ class ArmControlThread(threading.Thread):
         if 'filename' in stage_result:
             filename = stage_result['filename']
 
-            url = 'http://' + config.master_core_ip + ":"
-            url = url + str(config.master_core_port) + "/upload"
+            url = 'http://' + ggd_config.master_core_ip + ":"
+            url = url + str(ggd_config.master_core_port) + "/upload"
             files = {'file': open(filename, 'rb')}
             try:
                 log.info('[act.find] POST to URL:{0} file:{1}'.format(
@@ -353,8 +349,8 @@ class ArmControlThread(threading.Thread):
                     # Here is where the Arm will be stopped
                     self.stop_arm()
 
-            # half a second while iterating on control behavior
-            time.sleep(0.5)
+            # 1/3rd of a second while iterating on control behavior
+            time.sleep(0.3)
 
 
 class ArmTelemetryThread(threading.Thread):
@@ -374,20 +370,17 @@ class ArmTelemetryThread(threading.Thread):
     def run(self):
         while should_loop:
             msg = _arm_message(self.sg)
-            # print("[sort_arm] publishing telemetry msg to topic:{0}".format(
-            #     SORT_TELEMETRY_TOPIC
-            # ))
             mqttc.publish(SORT_TELEMETRY_TOPIC, json.dumps(msg), 0)
-            # time.sleep(0.05)  # 20Hz sample rate
-            time.sleep(self.frequency)  # 1Hz sample rate
+            time.sleep(self.frequency)  # sample rate
 
 
 if __name__ == "__main__":
-    initialize()
     parser = argparse.ArgumentParser(
-        description='SH Arm control and telemetry',
+        description='Arm control and telemetry',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--frequency', default=3.0,
+    parser.add_argument('config_file',
+                        help="The config file.")
+    parser.add_argument('--frequency', default=1.0,
                         dest='frequency', type=float,
                         help="Modify the default telemetry sample frequency.")
     parser.add_argument('--debug', default=False, action='store_true',
@@ -397,13 +390,18 @@ if __name__ == "__main__":
         log.setLevel(logging.DEBUG)
         logging.getLogger('servode').setLevel(logging.DEBUG)
 
+    cfg = GroupConfigFile(args.config_file)
+    ggd_name = cfg['devices']['GGD_arm']['thing_name']
+
+    initialize()
+
     with ServoProtocol() as sp:
         sg = ServoGroup()
-        sg['base'] = Servo(sp, config.arm_servo_ids[0], base_servo_cache)
-        sg['femur01'] = Servo(sp, config.arm_servo_ids[1], femur01_servo_cache)
-        sg['femur02'] = Servo(sp, config.arm_servo_ids[2], femur02_servo_cache)
-        sg['tibia'] = Servo(sp, config.arm_servo_ids[3], tibia_servo_cache)
-        sg['effector'] = Servo(sp, config.arm_servo_ids[4], eff_servo_cache)
+        sg['base'] = Servo(sp, ggd_config.arm_servo_ids[0], base_servo_cache)
+        sg['femur01'] = Servo(sp, ggd_config.arm_servo_ids[1], femur01_servo_cache)
+        sg['femur02'] = Servo(sp, ggd_config.arm_servo_ids[2], femur02_servo_cache)
+        sg['tibia'] = Servo(sp, ggd_config.arm_servo_ids[3], tibia_servo_cache)
+        sg['effector'] = Servo(sp, ggd_config.arm_servo_ids[4], eff_servo_cache)
 
         # Use same Group with one read cache because only monitor thread reads
         amt = ArmTelemetryThread(sg, frequency=args.frequency)

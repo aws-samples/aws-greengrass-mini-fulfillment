@@ -48,7 +48,7 @@ def heartbeat(config_file, frequency=3):
     # mqttc.configureTlsInsecure(True)
     mqttc.configureEndpoint(ggd_config.inv_arm_ip, ggd_config.inv_arm_port)
     mqttc.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
+        CAFilePath=dir_path + "/certs/inv_arm-server.crt",
         KeyPath=dir_path + "/certs/GGD_heartbeat.private.key",
         CertificatePath=dir_path + "/certs/GGD_heartbeat.certificate.pem.crt"
     )

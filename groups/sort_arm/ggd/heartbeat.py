@@ -47,7 +47,7 @@ def heartbeat(config_file, frequency=3):
     mqttc = AWSIoTMQTTClient(heartbeat_name)
     mqttc.configureEndpoint(ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
     mqttc.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
+        CAFilePath=dir_path + "/certs/sort_arm-server.crt",
         KeyPath=dir_path + "/certs/GGD_heartbeat.private.key",
         CertificatePath=dir_path + "/certs/GGD_heartbeat.certificate.pem.crt"
     )
