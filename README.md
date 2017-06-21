@@ -82,7 +82,7 @@ The high-level, local architecture of the demo is:
 ![mini-fulfillment demo architecture](docs/img/demo-architecture.png)
 
 #### Master/Conveyor Host
-There are five processes on this host:
+There are six processes on this host:
 - the Master Greengrass Core
 - the `heartbeat` Greengrass Device (GGD) process
 - the `bridge` GGD process
