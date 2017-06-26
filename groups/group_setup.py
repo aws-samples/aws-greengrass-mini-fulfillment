@@ -364,9 +364,9 @@ class ArmGroupType(GroupType):
 
 
 if __name__ == '__main__':
-    gc = GroupCommands()
-    gc.group_types = {
-        MasterGroupType.MASTER_TYPE: MasterGroupType,
-        ArmGroupType.ARM_TYPE: ArmGroupType
-    }
+    gc = GroupCommands(group_types={
+            MasterGroupType.MASTER_TYPE: MasterGroupType,
+            ArmGroupType.ARM_TYPE: ArmGroupType
+        }
+    )
     fire.Fire(gc)
