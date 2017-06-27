@@ -275,7 +275,7 @@ class MasterGroupType(GroupType):
 
 
 class ArmGroupType(GroupType):
-    ARM_TYPE = 'master'
+    ARM_TYPE = 'arm'
 
     def __init__(self, config=None, region='us-west-2'):
         super(ArmGroupType, self).__init__(
