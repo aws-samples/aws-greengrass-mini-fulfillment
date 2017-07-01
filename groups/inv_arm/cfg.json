@@ -29,19 +29,22 @@
       "thing_name": "<device_thing_name>"
     }
   },
-  "group": {
-    "id": ""
-  },
-  "lambda_functions": {
-    "ArmErrorDetector": {
-      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:ArmErrorDetector:<version_number>"
-    }
-  },
   "func_def": {
     "id": "",
     "version_arn": ""
   },
-  "logging_def": {
+  "group": {
+    "id": "",
+    "version": "",
+    "version_arn": ""
+  },
+  "lambda_functions": {
+    "ArmErrorDetector": {
+      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:ArmErrorDetector:<alias>",
+      "arn_qualifier": "<alias>"
+    }
+  },
+  "logger_def": {
     "id": "",
     "version_arn": ""
   },

@@ -36,16 +36,22 @@ class MasterGroupType(GroupType):
             type_name=MasterGroupType.MASTER_TYPE, config=config, region=region
         )
 
-    def get_core_definition(self, cfg):
-        return [{
+    def get_core_definition(self, config):
+        cfg = config
+        definition = [{
             "ThingArn": cfg['core']['thing_arn'],
             "CertificateArn": cfg['core']['cert_arn'],
             "Id": "{0}_00".format(self.type_name),
             "SyncShadow": True
         }]
+        logging.debug('[master.get_core_definition] definition:{0}'.format(
+            definition)
+        )
+        return definition
 
-    def get_device_definition(self, cfg):
-        return [
+    def get_device_definition(self, config):
+        cfg = config
+        definition = [
             {
                 "Id": "{0}_10".format(self.type_name),
                 "ThingArn": cfg['devices']['GGD_belt']['thing_arn'],
@@ -96,13 +102,18 @@ class MasterGroupType(GroupType):
                 "SyncShadow": False
             }
         ]
+        logging.debug('[master.get_device_definition] definition:{0}'.format(
+            definition)
+        )
+        return definition
 
-    def get_subscription_definition(self, cfg):
+    def get_subscription_definition(self, config):
+        cfg = config
         d = cfg['devices']
         l = cfg['lambda_functions']
         s = cfg['subscriptions']
 
-        return [
+        definition = [
             {
                 "Id": "5",
                 "Source": d['GGD_belt']['thing_arn'],
@@ -272,6 +283,11 @@ class MasterGroupType(GroupType):
                 "Target": l['MasterBrain']['arn']
             }
         ]
+        logging.debug(
+            '[master.get_subscription_definition] definition:{0}'.format(
+                definition)
+        )
+        return definition
 
 
 class ArmGroupType(GroupType):
@@ -282,16 +298,23 @@ class ArmGroupType(GroupType):
             type_name=ArmGroupType.ARM_TYPE, config=config, region=region
         )
 
-    def get_core_definition(self, cfg):
-        return [{
+    def get_core_definition(self, config):
+        cfg = config
+        definition = [{
             "ThingArn": cfg['core']['thing_arn'],
             "CertificateArn": cfg['core']['cert_arn'],
             "Id": "{0}_00".format(self.type_name),
             "SyncShadow": True
         }]
+        logging.debug(
+            '[arm.get_core_definition] definition:{0}'.format(
+                definition)
+        )
+        return definition
 
-    def get_device_definition(self, cfg):
-        return [
+    def get_device_definition(self, config):
+        cfg = config
+        definition = [
             {
                 "Id": "{0}_20".format(self.type_name),
                 "ThingArn": cfg['devices']['GGD_arm']['thing_arn'],
@@ -311,13 +334,20 @@ class ArmGroupType(GroupType):
                 "SyncShadow": False
             }
         ]
+        logging.debug(
+            '[arm.get_device_definition] definition:{0}'.format(
+                definition)
+        )
 
-    def get_subscription_definition(self, cfg):
+        return definition
+
+    def get_subscription_definition(self, config):
+        cfg = config
         d = cfg['devices']
         l = cfg['lambda_functions']
         s = cfg['subscriptions']
 
-        return [
+        definition = [
             {
                 "Id": "40",
                 "Source": d['GGD_arm']['thing_arn'],
@@ -361,6 +391,12 @@ class ArmGroupType(GroupType):
                 "Target": "cloud"
             }
         ]
+        logging.debug(
+            '[arm.get_subscription_definition] definition:{0}'.format(
+                definition)
+        )
+
+        return definition
 
 
 if __name__ == '__main__':

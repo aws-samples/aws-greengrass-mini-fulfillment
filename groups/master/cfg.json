@@ -50,21 +50,23 @@
     }
   },
   "group": {
-    "id": "fc3057b0-1a8a-4068-a3c0-20a8eff568e5"
+    "id": ""
   },
   "lambda_functions": {
     "MasterBrain": {
-      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterBrain:1"
+      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterBrain:<alias>",
+      "arn_qualifier": "<alias>"
     },
     "MasterErrorDetector": {
-      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterErrorDetector:1"
+      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterErrorDetector:<alias>",
+      "arn_qualifier": "<alias>"
     }
   },
   "func_def": {
     "id": "",
     "version_arn": ""
   },
-  "logging_def": {
+  "logger_def": {
     "id": "",
     "version_arn": ""
   },
