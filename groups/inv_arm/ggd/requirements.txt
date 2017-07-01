@@ -1,0 +1,5 @@
+AWSIoTPythonSDK>=1.1.2
+boto3>=1.4.4
+cachetools>=2.0.0
+requests>=2.17.3
+gg-group-setup>=0.2.1

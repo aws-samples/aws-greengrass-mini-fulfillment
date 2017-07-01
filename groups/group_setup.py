@@ -12,13 +12,8 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-import json
 import fire
-import boto3
 import logging
-from operator import itemgetter
-from boto3.session import Session
-from botocore.exceptions import ClientError
 
 from gg_group_setup import GroupCommands
 from gg_group_setup import GroupType
