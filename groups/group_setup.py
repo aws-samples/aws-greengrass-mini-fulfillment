@@ -24,6 +24,9 @@ logging.basicConfig(format='%(asctime)s|%(name)-8s|%(levelname)s: %(message)s',
 
 
 class MasterGroupType(GroupType):
+    """
+    Sub-class containing the definitions and subscriptions for the Master Group.
+    """
     MASTER_TYPE = 'master'
 
     def __init__(self, config=None, region='us-west-2'):
@@ -32,11 +35,17 @@ class MasterGroupType(GroupType):
         )
 
     def get_core_definition(self, config):
+        """
+        Get the Master Group Type's core definition
+
+        :param config: gg_group_setup.GroupConfigFile used with the Group Type
+        :return: the core definition used to provision the group
+        """
         cfg = config
         definition = [{
             "ThingArn": cfg['core']['thing_arn'],
             "CertificateArn": cfg['core']['cert_arn'],
-            "Id": "{0}_00".format(self.type_name),
+            "Id": "{0}_00".format(self.type_name),  # arbitrary unique Id string
             "SyncShadow": True
         }]
         logging.debug('[master.get_core_definition] definition:{0}'.format(
@@ -45,6 +54,12 @@ class MasterGroupType(GroupType):
         return definition
 
     def get_device_definition(self, config):
+        """
+        Get the Master Group Type's device definition
+
+        :param config: gg_group_setup.GroupConfigFile used with the Group Type
+        :return: the device definition used to provision the group
+        """
         cfg = config
         definition = [
             {
@@ -103,175 +118,181 @@ class MasterGroupType(GroupType):
         return definition
 
     def get_subscription_definition(self, config):
+        """
+        Get the Master Group Type's subscription definition
+
+        :param config: gg_group_setup.GroupConfigFile used with the Group Type
+        :return: the subscription definition used to provision the group
+        """
         cfg = config
         d = cfg['devices']
         l = cfg['lambda_functions']
         s = cfg['subscriptions']
 
         definition = [
-            {
+            {  # from Master belt device to MasterErrorDetector Lambda
                 "Id": "5",
                 "Source": d['GGD_belt']['thing_arn'],
                 "Subject": s['telemetry'],
                 "Target": l['MasterErrorDetector']['arn']
             },
-            {
+            {  # from Master belt device to web device
                 "Id": "10",
                 "Source": d['GGD_belt']['thing_arn'],
                 "Subject": s['all'],
                 "Target": d['GGD_web']['thing_arn']
             },
-            {
+            {  # from Master belt device to MasterBrain Lambda
                 "Id": "11",
                 "Source": d['GGD_belt']['thing_arn'],
                 "Subject": s['stages'],
                 "Target": l['MasterBrain']['arn']
             },
-            {
+            {  # from MasterErrorDetector to MasterBrain Lambda
                 "Id": "12",
                 "Source": l['MasterErrorDetector']['arn'],
                 "Subject": s['errors'],
                 "Target": l['MasterBrain']['arn']
             },
-            {
+            {  # from MasterErrorDetector to AWS cloud
                 "Id": "13",
                 "Source": l['MasterErrorDetector']['arn'],
                 "Subject": s['errors'],
                 "Target": "cloud"
             },
-            {
+            {  # from Master belt device to AWS cloud
                 "Id": "15",
                 "Source": d['GGD_belt']['thing_arn'],
                 "Subject": s['stages'],
                 "Target": "cloud"
             },
-            {
+            {  # from Master web device to Greengrass Core local shadow
                 "Id": "16",
                 "Source": d['GGD_web']['thing_arn'],
                 "Subject": "$aws/things/MasterBrain/shadow/get",
                 "Target": "GGShadowService"
             },
-            {
+            {  # from Greengrass Core local shadow to Master web device
                 "Id": "17",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/get/#",
                 "Target": d['GGD_web']['thing_arn']
             },
-            {
+            {  # from Master bridge device to Master web device
                 "Id": "18",
                 "Source": d['GGD_bridge']['thing_arn'],
-                "Subject": "/sortarm/#",
+                "Subject": "/sort/arm/#",
                 "Target": d['GGD_web']['thing_arn']
             },
-            {
+            {  # from Master bridge device to MasterBrain Lambda
                 "Id": "19",
                 "Source": d['GGD_bridge']['thing_arn'],
-                "Subject": "/sortarm/stages",
+                "Subject": "/sort/arm/stages",
                 "Target": l['MasterBrain']['arn']
             },
-            {
+            {  # from Master bridge device to MasterBrain Lambda
                 "Id": "20",
                 "Source": d['GGD_bridge']['thing_arn'],
-                "Subject": "/sortarm/errors",
+                "Subject": "/sort/arm/errors",
                 "Target": l['MasterBrain']['arn']
             },
-            {
+            {  # from Master bridge device to MasterBrain Lambda, stages topic
                 "Id": "21",
                 "Source": d['GGD_bridge']['thing_arn'],
-                "Subject": "/invarm/stages",
+                "Subject": "/inv/arm/stages",
                 "Target": l['MasterBrain']['arn']
             },
-            {
+            {  # from Master bridge device to MasterBrain Lambda, errors topic
                 "Id": "22",
                 "Source": d['GGD_bridge']['thing_arn'],
-                "Subject": "/invarm/errors",
+                "Subject": "/inv/arm/errors",
                 "Target": l['MasterBrain']['arn']
             },
-            {
+            {  # from Master bridge device to Master web device, all topics
                 "Id": "23",
                 "Source": d['GGD_bridge']['thing_arn'],
-                "Subject": "/invarm/#",
+                "Subject": "/inv/arm/#",
                 "Target": d['GGD_web']['thing_arn']
             },
-            {
+            {  # from Master belt device to Greengrass Core local shadow, get
                 "Id": "31",
                 "Source": d['GGD_belt']['thing_arn'],
                 "Subject": "$aws/things/MasterBrain/shadow/get",
                 "Target": "GGShadowService"
             },
-            {
+            {  # from Greengrass Core local shadow to Master belt device, get
                 "Id": "32",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/get/#",
                 "Target": d['GGD_belt']['thing_arn']
             },
-            {
+            {  # from Master belt device to Greengrass Core local shadow, update
                 "Id": "34",
                 "Source": d['GGD_belt']['thing_arn'],
                 "Subject": "$aws/things/MasterBrain/shadow/update",
                 "Target": "GGShadowService"
             },
-            {
+            {  # from Greengrass Core local shadow to Master belt device, update
                 "Id": "35",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/update/#",
                 "Target": d['GGD_belt']['thing_arn']
             },
-            {
+            {  # from InvArm arm device to Master Greengrass Core local shadow
                 "Id": "84",
                 "Source": d['GGD_inv_arm']['thing_arn'],
                 "Subject": "$aws/things/MasterBrain/shadow/get",
                 "Target": "GGShadowService"
             },
-            {
+            {  # from Master Greengrass Core local shadow to InvArm arm device
                 "Id": "85",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/get/#",
                 "Target": d['GGD_inv_arm']['thing_arn']
             },
-            {
+            {  # from InvArm arm device to Master Greengrass Core local shadow
                 "Id": "86",
                 "Source": d['GGD_inv_arm']['thing_arn'],
                 "Subject": "$aws/things/MasterBrain/shadow/update",
                 "Target": "GGShadowService"
             },
-            {
+            {  # from Master Greengrass Core local shadow to InvArm arm device
                 "Id": "87",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/update/#",
                 "Target": d['GGD_inv_arm']['thing_arn']
             },
-            {
+            {  # from SortArm arm device to Master Greengrass Core local shadow
                 "Id": "92",
                 "Source": d['GGD_sort_arm']['thing_arn'],
                 "Subject": "$aws/things/MasterBrain/shadow/get",
                 "Target": "GGShadowService"
             },
-            {
+            {  # from Master Greengrass Core local shadow to SortArm arm device
                 "Id": "93",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/get/#",
                 "Target": d['GGD_sort_arm']['thing_arn']
             },
-            {
+            {  # from SortArm arm device to Master Greengrass Core local shadow
                 "Id": "94",
                 "Source": d['GGD_sort_arm']['thing_arn'],
                 "Subject": "$aws/things/MasterBrain/shadow/update",
                 "Target": "GGShadowService"
             },
-            {
+            {  # from Master Greengrass Core local shadow to SortArm arm device
                 "Id": "95",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/update/#",
                 "Target": d['GGD_sort_arm']['thing_arn']
             },
-            {
+            {  # from Master heartbeat device to AWS cloud
                 "Id": "97",
                 "Source": d['GGD_heartbeat']['thing_arn'],
                 "Subject": "/heart/beat",
                 "Target": "cloud"
             },
-            {
+            {  # from Master button device to MasterBrain Lambda
                 "Id": "98",
                 "Source": d['GGD_button']['thing_arn'],
                 "Subject": "/button",
@@ -294,6 +315,12 @@ class ArmGroupType(GroupType):
         )
 
     def get_core_definition(self, config):
+        """
+        Get the Arm Group Type's core definition
+
+        :param config: gg_group_setup.GroupConfigFile used with the Group Type
+        :return: the core definition used to provision the group
+        """
         cfg = config
         definition = [{
             "ThingArn": cfg['core']['thing_arn'],
@@ -308,6 +335,12 @@ class ArmGroupType(GroupType):
         return definition
 
     def get_device_definition(self, config):
+        """
+        Get the Arm Group Type's device definition
+
+        :param config: gg_group_setup.GroupConfigFile used with the Group Type
+        :return: the device definition used to provision the group
+        """
         cfg = config
         definition = [
             {
@@ -337,49 +370,55 @@ class ArmGroupType(GroupType):
         return definition
 
     def get_subscription_definition(self, config):
+        """
+        Get the Arm Group Type's subscription definition
+
+        :param config: gg_group_setup.GroupConfigFile used with the Group Type
+        :return: the subscription definition used to provision the group
+        """
         cfg = config
         d = cfg['devices']
         l = cfg['lambda_functions']
         s = cfg['subscriptions']
 
         definition = [
-            {
+            {  # from Group's arm device to bridge device
                 "Id": "40",
                 "Source": d['GGD_arm']['thing_arn'],
                 "Subject": s["all"],
                 "Target": d['GGD_bridge']['thing_arn']
             },
-            {
+            {  # from Group's arm device to AWS cloud
                 "Id": "41",
                 "Source": d['GGD_arm']['thing_arn'],
                 "Subject": s['stages'],
                 "Target": "cloud"
             },
-            {
+            {  # from Group's arm device ArmErrorDetector Lambda
                 "Id": "42",
                 "Source": d['GGD_arm']['thing_arn'],
                 "Subject": s['telemetry'],
                 "Target": l['ArmErrorDetector']['arn']
             },
-            {
+            {  # from ArmErrorDetector Lambda to bridge device
                 "Id": "50",
                 "Source": l['ArmErrorDetector']['arn'],
                 "Subject": s['errors'],
                 "Target": d['GGD_bridge']['thing_arn']
             },
-            {
+            {  # from ArmErrorDetector Lambda to AWS cloud
                 "Id": "51",
                 "Source": l['ArmErrorDetector']['arn'],
                 "Subject": s['errors'],
                 "Target": "cloud"
             },
-            {
+            {  # from Group's heartbeat device to bridge device
                 "Id": "95",
                 "Source": d['GGD_heartbeat']['thing_arn'],
                 "Subject": "/heart/beat",
                 "Target": d['GGD_bridge']['thing_arn']
             },
-            {
+            {  # from Group's heartbeat device to AWS cloud
                 "Id": "97",
                 "Source": d['GGD_heartbeat']['thing_arn'],
                 "Subject": "/heart/beat",
@@ -395,6 +434,13 @@ class ArmGroupType(GroupType):
 
 
 if __name__ == '__main__':
+    """
+    Instantiate a gg_group_setup.GroupCommands object using the two sub-classed
+    GroupType classes. 
+    
+    GroupCommands will then use the sub-classed GroupTypes to expose the 
+    'create', 'deploy', 'clean_all' and 'clean_file' commands.
+    """
     gc = GroupCommands(group_types={
             MasterGroupType.MASTER_TYPE: MasterGroupType,
             ArmGroupType.ARM_TYPE: ArmGroupType
