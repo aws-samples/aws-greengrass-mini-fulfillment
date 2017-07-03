@@ -119,7 +119,8 @@
 
 1. Follow [these instructions](#tbd_link) to install (but not start) Greengrass on each host
 1. On each host make a `~/aws-greengrass-mini-fulfillment` directory
-1. Copy the directories from the `aws-greengrass-mini-fulfillment` repository to each host. Specifically,
+1. Copy the directories from the `aws-greengrass-mini-fulfillment` repository to 
+   each host. Specifically,
     - `~/aws-greengrass-mini-fulfillment/groups/sort_arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/sort_arm`
     - `~/aws-greengrass-mini-fulfillment/groups/inv_arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/inv_arm`
         - ..and..
@@ -127,6 +128,7 @@
         - ...respectively
 1. On each host
     1. `cd ~/mini-fulfillment/groups/<host_type>/`
+    1. `pip install -r ggd/requirements.txt`
     1. `chmod 755 all_certs.sh run_ggd.sh servo_build.sh stop_ggd.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `all_certs.sh`. This will copy the host's certs into the 
