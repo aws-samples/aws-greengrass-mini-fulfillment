@@ -25,7 +25,7 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
 import ggd_config
 from mqtt_utils import mqtt_connect
-from ..group_config import GroupConfigFile
+from gg_group_setup import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -54,7 +54,7 @@ def sorting_bridge(client, userdata, message):
 def inventory_bridge(client, userdata, message):
     log.debug('[inv_bridge] subscr_topic:{0} msg:{1}'.format(
         message.topic, message.payload))
-    mqttc_master.publish(message.topic, message.payload, 0)
+    mqttc_master.publish("/inv"+message.topic, message.payload, 0)
 
 
 def init_bridge():

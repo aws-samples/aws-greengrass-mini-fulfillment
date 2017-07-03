@@ -25,7 +25,7 @@ import ggd_config
 
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
 from mqtt_utils import mqtt_connect
-from ..group_config import GroupConfigFile
+from gg_group_setup import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,10 +37,10 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.DEBUG)
 
-GGD_HEARTBEAT_TOPIC = "/heart/beat"
+ggd_ca_file_path = "<invalid_cert>"
 
 
-def heartbeat(config_file, frequency=3):
+def heartbeat(config_file, topic, frequency=3):
     cfg = GroupConfigFile(config_file)
 
     heartbeat_name = cfg['devices']['GGD_heartbeat']['thing_name']
@@ -49,7 +49,7 @@ def heartbeat(config_file, frequency=3):
         ggd_config.master_core_ip, ggd_config.master_core_port
     )
     mqttc.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
+        CAFilePath=dir_path + "/" + ggd_ca_file_path,
         KeyPath=dir_path + "/certs/GGD_heartbeat.private.key",
         CertificatePath=dir_path + "/certs/GGD_heartbeat.certificate.pem.crt"
     )
@@ -76,10 +76,7 @@ def heartbeat(config_file, frequency=3):
                     ]
                 }
                 print("[hb] publishing heartbeat msg: {0}".format(msg))
-                mqttc.publish(
-                    GGD_HEARTBEAT_TOPIC,
-                    json.dumps(msg), 0
-                )
+                mqttc.publish(topic, json.dumps(msg), 0)
                 time.sleep(random.random() * 10)
 
         except KeyboardInterrupt:
@@ -96,6 +93,11 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('config_file',
                         help="The config file.")
+    parser.add_argument('ca_file_path',
+                        help="CA File Path of Server Certificate.")
+    parser.add_argument('--topic', default='/heart/beat',
+                        help="Topic used to communicate arm telemetry.")
 
     args = parser.parse_args()
-    heartbeat(config_file=args.config_file)
+    ggd_ca_file_path = args.ca_file_path
+    heartbeat(config_file=args.config_file, topic=args.topic)

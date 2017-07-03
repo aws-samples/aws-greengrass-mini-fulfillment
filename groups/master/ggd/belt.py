@@ -27,7 +27,7 @@ from .servo.servode import ServoProtocol, ServoGroup, Servo
 
 import ggd_config
 from mqtt_utils import mqtt_connect
-from ..group_config import GroupConfigFile
+from gg_group_setup import GroupConfigFile
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
