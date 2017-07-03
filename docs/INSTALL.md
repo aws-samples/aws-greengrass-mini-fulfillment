@@ -131,7 +131,7 @@
     1. `pip install -r ggd/requirements.txt`
     1. `chmod 755 all_certs.sh run_ggd.sh servo_build.sh stop_ggd.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
-    1. Execute `all_certs.sh`. This will copy the host's certs into the 
+    1. Execute `copy_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
 1. Using [these instructions](OPERATE.md) start the GG Cores and Devices in the following order:
     1. Start the `master` GG Core

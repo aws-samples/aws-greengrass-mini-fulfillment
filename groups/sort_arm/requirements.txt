@@ -1,6 +1,0 @@
-AWSIoTPythonSDK==1.1.1
-boto3==1.4.4
-botocore==1.5.7
-cachetools==2.0.0
-futures==3.0.5
-numpy==1.12.1
