@@ -27,7 +27,7 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, AWSIoTMQTTShadowClient
 
 import ggd_config
 from mqtt_utils import mqtt_connect
-from ..group_config import GroupConfigFile
+from gg_group_setup import GroupConfigFile
 
 from stages import ArmStages, NO_BOX_FOUND
 from servo.servode import Servo, ServoProtocol, ServoGroup
@@ -42,10 +42,6 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-SORT_TELEMETRY_TOPIC = "/sortarm/telemetry"
-SORT_ERRORS_TOPIC = "/sortarm/errors"
-STAGE_TOPIC = "/sortarm/stages"
-
 commands = ['run', 'stop']
 
 should_loop = True
@@ -53,6 +49,7 @@ should_loop = True
 mqttc = None
 mstr_shadow_client = None
 ggd_name = 'Empty'
+ggd_ca_file_path = "<invalid_cert>"
 master_shadow = None
 cmd_event = threading.Event()
 cmd_event.clear()
@@ -75,7 +72,7 @@ def initialize():
     mqttc.configureEndpoint(
         ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
     mqttc.configureCredentials(
-        CAFilePath=dir_path + "/certs/sort_arm-server.crt",
+        CAFilePath=dir_path + "/" + ggd_ca_file_path,
         KeyPath=dir_path + "/certs/GGD_arm.private.key",
         CertificatePath=dir_path + "/certs/GGD_arm.certificate.pem.crt"
     )
@@ -161,7 +158,7 @@ class ArmControlThread(threading.Thread):
     # TODO move control into Lambda - TBD pending determination of Lambdas being
     #   able to access serial port
 
-    def __init__(self, servo_group, event, args=(), kwargs={}):
+    def __init__(self, servo_group, event, stage_topic, args=(), kwargs={}):
         super(ArmControlThread, self).__init__(
             name="arm_control_thread", args=args, kwargs=kwargs
         )
@@ -175,6 +172,7 @@ class ArmControlThread(threading.Thread):
         self.control_stages['find'] = self.find
         self.control_stages['pick'] = self.pick
         self.control_stages['sort'] = self.sort
+        self.stage_topic = stage_topic
         self.found_box = None
 
         master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
@@ -225,10 +223,10 @@ class ArmControlThread(threading.Thread):
     def home(self):
         log.debug("[act.home] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(STAGE_TOPIC, _stage_message("home", "begin"), 0)
+        mqttc.publish(self.stage_topic, _stage_message("home", "begin"), 0)
         stage_result = arm.stage_home()
         mqttc.publish(
-            STAGE_TOPIC, _stage_message("home", "end", stage_result), 0)
+            self.stage_topic, _stage_message("home", "end", stage_result), 0)
         log.debug("[act.home] [end]")
         return stage_result
 
@@ -238,7 +236,7 @@ class ArmControlThread(threading.Thread):
         loop = True
         self.found_box = NO_BOX_FOUND
         stage_result = NO_BOX_FOUND
-        mqttc.publish(STAGE_TOPIC, _stage_message("find", "begin"), 0)
+        mqttc.publish(self.stage_topic, _stage_message("find", "begin"), 0)
         while self.cmd_event.is_set() and loop is True:
             stage_result = arm.stage_find()
             if stage_result['x'] and stage_result['y']:  # X & Y start as none
@@ -273,7 +271,7 @@ class ArmControlThread(threading.Thread):
                 ))
 
         mqttc.publish(
-            STAGE_TOPIC, _stage_message("find", "end", stage_result), 0)
+            self.stage_topic, _stage_message("find", "end", stage_result), 0)
 
         log.info("[act.find] outside self.found_box:{0}".format(self.found_box))
         log.debug("[act.find] [end]")
@@ -282,7 +280,7 @@ class ArmControlThread(threading.Thread):
     def pick(self):
         log.debug("[act.pick] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(STAGE_TOPIC, _stage_message("pick", "begin"), 0)
+        mqttc.publish(self.stage_topic, _stage_message("pick", "begin"), 0)
         pick_box = self.found_box
         self.found_box = NO_BOX_FOUND
         log.info("[act.pick] pick_box:{0}".format(pick_box))
@@ -290,17 +288,17 @@ class ArmControlThread(threading.Thread):
         stage_result = arm.stage_pick(previous_results=pick_box,
                                       cartesian=False)
         mqttc.publish(
-            STAGE_TOPIC, _stage_message("pick", "end", stage_result), 0)
+            self.stage_topic, _stage_message("pick", "end", stage_result), 0)
         log.debug("[act.pick] [end]")
         return stage_result
 
     def sort(self):
         log.debug("[act.sort] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(STAGE_TOPIC, _stage_message("sort", "begin"), 0)
+        mqttc.publish(self.stage_topic, _stage_message("sort", "begin"), 0)
         stage_result = arm.stage_sort()
         mqttc.publish(
-            STAGE_TOPIC, _stage_message("sort", "end", stage_result), 0)
+            self.stage_topic, _stage_message("sort", "end", stage_result), 0)
         log.debug("[act.sort] [end]")
         return stage_result
 
@@ -358,19 +356,21 @@ class ArmTelemetryThread(threading.Thread):
     The thread that sets up telemetry interaction with the Servos.
     """
 
-    def __init__(self, servo_group, frequency, args=(), kwargs={}):
+    def __init__(self, servo_group, frequency, telemetry_topic,
+                 args=(), kwargs={}):
         super(ArmTelemetryThread, self).__init__(
             name="arm_telemetry_thread", args=args, kwargs=kwargs
         )
         self.sg = servo_group
         self.frequency = frequency
+        self.telemetry_topic = telemetry_topic
         log.info("[att.__init__] frequency:{0}".format(
             self.frequency))
 
     def run(self):
         while should_loop:
             msg = _arm_message(self.sg)
-            mqttc.publish(SORT_TELEMETRY_TOPIC, json.dumps(msg), 0)
+            mqttc.publish(self.telemetry_topic, json.dumps(msg), 0)
             time.sleep(self.frequency)  # sample rate
 
 
@@ -380,6 +380,12 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('config_file',
                         help="The config file.")
+    parser.add_argument('ca_file_path',
+                        help="CA File Path of Server Certificate.")
+    parser.add_argument('--stage_topic', default='/arm/stages',
+                        help="Topic used to communicate arm stage messages.")
+    parser.add_argument('--telemetry_topic', default='/arm/telemetry',
+                        help="Topic used to communicate arm telemetry.")
     parser.add_argument('--frequency', default=1.0,
                         dest='frequency', type=float,
                         help="Modify the default telemetry sample frequency.")
@@ -392,6 +398,7 @@ if __name__ == "__main__":
 
     cfg = GroupConfigFile(args.config_file)
     ggd_name = cfg['devices']['GGD_arm']['thing_name']
+    ggd_ca_file_path = args.ca_file_path
 
     initialize()
 
@@ -403,9 +410,11 @@ if __name__ == "__main__":
         sg['tibia'] = Servo(sp, ggd_config.arm_servo_ids[3], tibia_servo_cache)
         sg['effector'] = Servo(sp, ggd_config.arm_servo_ids[4], eff_servo_cache)
 
-        # Use same Group with one read cache because only monitor thread reads
-        amt = ArmTelemetryThread(sg, frequency=args.frequency)
-        act = ArmControlThread(sg, cmd_event)
+        # Use same ServoGroup with one read cache because only the telemetry
+        # thread reads
+        amt = ArmTelemetryThread(sg, frequency=args.frequency,
+                                 telemetry_topic=args.telemetry_topic)
+        act = ArmControlThread(sg, cmd_event, stage_topic=args.stage_topic)
         amt.start()
         act.start()
 
