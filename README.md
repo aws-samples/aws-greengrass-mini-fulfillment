@@ -1,4 +1,4 @@
-## The Greengrass mini-fulfillment center demo 
+## The Greengrass mini-fulfillment center example 
 
 At re:Invent 2016 AWS Greengrass was introduced to the world. This miniature 
 fulfillment center demonstration was used to display what could be done with 
@@ -7,18 +7,18 @@ version of [Greengrass](https://aws.amazon.com/greengrass/).
  
 A [video](https://youtu.be/XQQjX8GTEko?t=27m27s) was taken of the completed and 
 operational Greengrass-based miniature fulfillment center, a.k.a. "dual robot arm demo" 
-in action at re:Invent. Since re:Invent this demo has continued to evolve and it has 
-been the seed for [other demos](https://youtu.be/dpatdO2uPCA). 
+in action at re:Invent. Since re:Invent this demo and example has continued to 
+evolve and it has been the seed for [other demos](https://youtu.be/dpatdO2uPCA). 
 
-The artifacts, code, and instructions to make this demo are now available in this 
-repo. We look forward to seeing what you'll do with it.
+The artifacts, example code, and instructions to construct this demo are now 
+available in this repo. We look forward to seeing what you'll do with it.
 
 #### Directory Structure
 ```
 aws-greengrass-mini-fulfillment/
   +- docs/
   |  +- BOM.md       -- the bill of materials necessary for construction
-  |  +- CONSTR.md    -- instructions for physical construction
+  |  +- CONSTR.md    -- instructions for physical construction (TODO)
   |  +- INSTALL.md   -- instructions for software installation
   |  +- OPERATE.md   -- instructions for operation of the demo
   |  +- TIDBITS.md   -- tiny pieces of setup information that might be helpful
