@@ -3,16 +3,17 @@
 1. Install OS (Jessie-Lite Sept) on three hosts.
     - this demo has been built using Raspberry Pi 3 computers
 1. Configure the three hosts to be on the same network and note each host's IP  
+1. On each host make a `~/mini-fulfillment` directory
 1. Back on your development machine, execute the following steps.
-    1. Clone this git repo into directory `~/aws-greengrass-mini-fulfillment/`
-    > **Note**: All subsequent instructions assume the local repository is in 
-    `~/aws-greengrass-mini-fulfillment/` if you chose another directory, remember 
-    to take that into account. 
+    1. Clone this git repo into a directory `~/aws-greengrass-mini-fulfillment/`
+    > **Note**: All subsequent instructions assume the developer's local repository 
+    is in `~/aws-greengrass-mini-fulfillment/` if you chose another directory, 
+    remember to take that into account. 
     1. **Per host** [create](http://docs.aws.amazon.com/iot/latest/developerguide/thing-registry.html) 
     the three Greengrass Core things and attach 
     [certificates](http://docs.aws.amazon.com/iot/latest/developerguide/managing-device-certs.html) 
     in AWS IoT.  
-        1. Download and name the certificate and key file pair as follows:
+        1. Download and name the certificate and key files as follows:
       
             | Filename | Description |
             | :--- | :--- |
@@ -20,19 +21,23 @@
             | `cloud.pem.key` | the GG Core's AWS IoT client private key - **unique key per host** |
             | `cloud.public.pem.key` | the GG Core's AWS IoT client public key - **unique key per host, unused in this example** |
     
-        1. Place each pair of files in these directories, respectively.
-            - `~/aws-greengrass-mini-fulfillment/groups/<host_type>/config/certs`
+        1. Per host, place the certificate and key files in these directories, respectively.
+            - `~/aws-greengrass-mini-fulfillment/groups/arm/sort_arm`
+            - `~/aws-greengrass-mini-fulfillment/groups/arm/inv_arm`
+            - `~/aws-greengrass-mini-fulfillment/groups/master/certs`
      
         1. Place the `thing_arn`, `cert_arn`, and `thing_name` values for each host's 
-        GG Core in `~/aws-greengrass-mini-fulfillment/groups/<host_type>/config/cfg.json` 
-            ```python
-            { 
-              "core": {
-                "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-                "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-                "thing_name": "<device_thing_name>"
-            }, ...
-            ```
+        GG Core in the Group's `cfg.json` file. 
+            - For example, change `~/aws-greengrass-mini-fulfillment/groups/arm/sort_arm/cfg.json` 
+            with the correct values.
+                ```python
+                { 
+                  "core": {
+                    "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
+                    "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
+                    "thing_name": "<device_thing_name>"
+                }, ...
+                ```
             > The specific **thing** names are not important, but to remain consistent 
             with the host names used in these instructions, one might use: 
             `master-pi-ggc`, `sort_arm-pi-ggc`, and `inv_arm-pi-ggc`
@@ -54,7 +59,7 @@
           GGD_web.private.key
           GGD_web.public.key
           ```
-        - `~/aws-greengrass-mini-fulfillment/groups/sort_arm/ggd/certs`
+        - `~/aws-greengrass-mini-fulfillment/groups/arm/sort_arm/ggd_certs`
           ```
           GGD_arm.certificate.pem.crt
           GGD_arm.private.key
@@ -63,7 +68,7 @@
           GGD_heartbeat.private.key
           GGD_heartbeat.public.key
           ```
-        - `~/aws-greengrass-mini-fulfillment/groups/inv_arm/ggd/certs`
+        - `~/aws-greengrass-mini-fulfillment/groups/arm/inv_arm/ggd_certs`
           ```
           GGD_arm.certificate.pem.crt
           GGD_arm.private.key
@@ -72,8 +77,8 @@
           GGD_heartbeat.private.key
           GGD_heartbeat.public.key
           ```
-    1. For each host, update the placeholder values in each
-       `~/aws-greengrass-mini-fulfillment/groups/<host_type>/ggd/config.py` file with the host 
+    1. Update the placeholder values in `~/aws-greengrass-mini-fulfillment/groups/arm/ggd/ggd_config.py` and 
+    `~/aws-greengrass-mini-fulfillment/groups/master/ggd/ggd_config.py` with the host 
        IPs noted earlier. 
         - Example:
         ```python
@@ -118,22 +123,35 @@
         ```
 
 1. Follow [these instructions](#tbd_link) to install (but not start) Greengrass on each host
-1. On each host make a `~/aws-greengrass-mini-fulfillment` directory
-1. Copy the directories from the `aws-greengrass-mini-fulfillment` repository to 
-   each host. Specifically,
-    - `~/aws-greengrass-mini-fulfillment/groups/sort_arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/sort_arm`
-    - `~/aws-greengrass-mini-fulfillment/groups/inv_arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/inv_arm`
+1. Copy the directories from the developer local `aws-greengrass-mini-fulfillment` repository 
+   to each host. Specifically,
+    - `~/aws-greengrass-mini-fulfillment/groups/arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/arm`
+    - `~/aws-greengrass-mini-fulfillment/groups/arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/arm`
         - ..and..
     - `~/aws-greengrass-mini-fulfillment/groups/master` to `master-pi$ ~/mini-fulfillment/groups/master`
         - ...respectively
-1. On each host
-    1. `cd ~/mini-fulfillment/groups/<host_type>/`
-    1. `pip install -r ggd/requirements.txt`
-    1. `chmod 755 all_certs.sh run_ggd.sh servo_build.sh stop_ggd.sh`
+1. On the **master** host
+    1. `cd ~/mini-fulfillment/groups/master/`
+    1. `pip install -r requirements.txt`
+    1. `chmod 755 cp_certs.sh servo_build.sh start_master.sh stop_master.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
-    1. Execute `copy_certs.sh`. This will copy the host's certs into the 
+    1. Execute `cp_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
-1. Using [these instructions](OPERATE.md) start the GG Cores and Devices in the following order:
+1. On the `sort_arm` host
+    1. `cd ~/mini-fulfillment/groups/arm/`
+    1. `pip install -r requirements.txt`
+    1. `chmod 755 cp_sort_arm_certs.sh servo_build.sh start_sort_arm.sh stop_arm.sh`
+    1. Make the Dynamixel SDK by executing `./servo_build.sh`
+    1. Execute `./cp_sort_arm_certs.sh`. This will copy the host's certs into the 
+       necessary GG Core location.
+1. On the `inv_arm` host
+    1. `cd ~/mini-fulfillment/groups/arm/`
+    1. `pip install -r requirements.txt`
+    1. `chmod 755 cp_inv_arm_certs.sh servo_build.sh start_inv_arm.sh stop_arm.sh`
+    1. Make the Dynamixel SDK by executing `./servo_build.sh`
+    1. Execute `./cp_inv_arm_certs.sh`. This will copy the host's certs into the 
+       necessary GG Core location.
+1. Using [the operation instructions](OPERATE.md) start the GG Cores and Devices in the following order:
     1. Start the `master` GG Core
     1. Start the `sort_arm` GG Core and the `sort_arm` GG Devices
     1. Start the `inv_arm` GG Core and the `inv_arm` GG Devices
