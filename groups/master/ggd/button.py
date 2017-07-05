@@ -62,7 +62,7 @@ def button(sensor_id, toggle):
         val = "off"
 
     msg = {
-        "version": "2017-06-08",
+        "version": "2017-07-05",  # YYYY-MM-DD
         "ggd_id": ggd_name,
         "hostname": hostname,
         "data": [

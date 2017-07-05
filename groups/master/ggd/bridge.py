@@ -48,7 +48,7 @@ should_loop = True
 def sorting_bridge(client, userdata, message):
     log.debug('[sort_bridge] subscr_topic:{0} msg:{1}'.format(
         message.topic, message.payload))
-    mqttc_master.publish(message.topic, message.payload, 0)
+    mqttc_master.publish("/sort"+message.topic, message.payload, 0)
 
 
 def inventory_bridge(client, userdata, message):
@@ -58,9 +58,9 @@ def inventory_bridge(client, userdata, message):
 
 
 def init_bridge():
-    log.info("[bridge] Starting connection to Master/Conveyor Core")
+    log.info("[bridge] Starting connection to Master Core")
     if mqtt_connect(mqttc_master):
-        log.info("[bridge] Connected to Master/Conveyor Core")
+        log.info("[bridge] Connected to Master Core")
     else:
         log.error("[bridge] could not connect to Master/Conveyor Core")
 
@@ -93,9 +93,11 @@ if __name__ == '__main__':
     if args.debug:
         log.setLevel(logging.DEBUG)
 
+    # read the config file
     cfg = GroupConfigFile(args.config_file)
     ggd_name = cfg['devices']['GGD_bridge']['thing_name']
 
+    # create an MQTT client oriented toward the Master Greengrass Core
     mqttc_master = AWSIoTMQTTClient(ggd_name)
     mqttc_master.configureEndpoint(
         ggd_config.master_core_ip, ggd_config.master_core_port)
@@ -105,6 +107,7 @@ if __name__ == '__main__':
         CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
     )
 
+    # create an MQTT client oriented toward the Sorting Arm Greengrass Core
     mqttc_sort_arm = AWSIoTMQTTClient(ggd_name)
     mqttc_sort_arm.configureEndpoint(
         ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
@@ -114,6 +117,7 @@ if __name__ == '__main__':
         CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
     )
 
+    # create an MQTT client oriented toward the Inventory Arm Greengrass Core
     mqttc_inv_arm = AWSIoTMQTTClient(ggd_name)
     mqttc_inv_arm.configureEndpoint(
         ggd_config.inv_arm_ip, ggd_config.inv_arm_port)

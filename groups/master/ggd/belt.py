@@ -29,6 +29,27 @@ import ggd_config
 from mqtt_utils import mqtt_connect
 from gg_group_setup import GroupConfigFile
 
+"""
+Greengrass Belt device
+
+This Greengrass device controls the mini-fulfillment center conveyor belt. It 
+accomplishes this using two threads: one thread to control and report 
+upon the belt's movement through `stages` and a separate thread to read and 
+report upon the belt's servo telemetry. 
+
+The control stages that the arm device will execute in order, are:
+* `roll` - the belt is in the rolling stage
+
+To act in a coordinated fashion with the other Group's in the 
+miniature fulfillment center, this device also subscribes to device shadow in 
+the Master Greengrass Group. The commands that are understood from the master 
+shadow are:
+* `run` - the arm will start executing the stages in order
+* `stop` - the arm will cease operation and go to the stop position
+
+This device expects to be launched form a command line. To learn more about that 
+command line type: `python arm.py --help`
+"""
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -99,7 +120,7 @@ def belt_message(servo_group):
         })
 
     msg = {
-        "version": "2016-11-01",
+        "version": "2017-07-05",  # YYYY-MM-DD
         "data": data,
         "ggd_id": ggd_name
     }
@@ -113,7 +134,8 @@ class BeltControlThread(threading.Thread):
     """
 
     # TODO move control into Lambda
-    def __init__(self, servo_group, event, belt_speed, args=(), kwargs={}):
+    def __init__(self, servo_group, event, belt_speed, stage_topic, frequency,
+                 args=(), kwargs={}):
         super(BeltControlThread, self).__init__(
             name="belt_control_thread", args=args, kwargs=kwargs
         )
@@ -121,6 +143,7 @@ class BeltControlThread(threading.Thread):
         self.rolling = False
         self.cmd_event = event
         self.belt_speed = belt_speed
+        self.frequency = frequency
         self.reversed = False
         self.active_state = 'initialized'
         self.last_state = 'initialized'
@@ -133,14 +156,14 @@ class BeltControlThread(threading.Thread):
     def _activate_command(self, cmd):
         self.last_state = self.active_state
         self.active_state = cmd
-        log.info("[bct.activate_command] last_state='{0}' state='{1}'".format(
+        log.info("[bct._activate_command] last_state='{0}' state='{1}'".format(
             self.last_state, cmd))
 
         if self.active_state == 'run':
-            log.info("[bct.activate_command] START RUN")
+            log.info("[bct._activate_command] START RUN")
             self.cmd_event.set()
         elif self.active_state == 'stop':
-            log.info("[bct.activate_command] STOP")
+            log.info("[bct._activate_command] STOP")
             self.cmd_event.clear()
 
         # acknowledge the desired state is now reported
@@ -163,10 +186,10 @@ class BeltControlThread(threading.Thread):
                 mqttc.publish(
                     STAGE_TOPIC, stage_message(
                         "roll", 'reversed', stage_results), 0)
-                log.info("[bct.shadow_mgr] reversed belt")
+                log.info("[bct._reverse_roll] reversed belt")
             else:
                 log.debug(
-                    "[bct.shadow_mgr] should_reverse=True but already reversed")
+                    "[bct._reverse_roll] should_reverse=True but already reversed")
         else:
             if self.reversed:
                 self.sg.wheel_speed(self.belt_speed)
@@ -174,10 +197,10 @@ class BeltControlThread(threading.Thread):
                 mqttc.publish(
                     STAGE_TOPIC, stage_message(
                         "roll", 'not_reversed', stage_results), 0)
-                log.info("[bct.shadow_mgr] un-reversed belt")
+                log.info("[bct._reverse_roll] un-reversed belt")
             else:
                 log.debug(
-                    "[bct.shadow_mgr] should_reverse=False, not reversed")
+                    "[bct._reverse_roll] should_reverse=False, not reversed")
 
         # acknowledge the desired state is now reported
         master_shadow.shadowUpdate(json.dumps({
@@ -211,6 +234,10 @@ class BeltControlThread(threading.Thread):
             self._reverse_roll(reverse)
 
     def roll(self):
+        """
+        The belt is in or should start the rolling stage.
+        :return:
+        """
         stage_results = dict()
         if self.rolling is False:
             if self.cmd_event.is_set():
@@ -225,6 +252,7 @@ class BeltControlThread(threading.Thread):
         else:
             stage_results['rolling'] = True
 
+        # publish stage message to reflect the belt is rolling and not reversed
         mqttc.publish(
             STAGE_TOPIC, stage_message(
                 "roll", 'not_reversed', stage_results), 0)
@@ -247,6 +275,7 @@ class BeltControlThread(threading.Thread):
 
         stage_results['rolling'] = self.rolling = False
 
+        # publish stage message to reflect the belt is stopped
         mqttc.publish(
             STAGE_TOPIC, stage_message(
                 "stop", addl_text, stage_results), 0)
@@ -262,8 +291,8 @@ class BeltControlThread(threading.Thread):
                     # Here is where the Belt will be stopped
                     self.stop_belt()
 
-            # half a second while iterating on control behavior
-            time.sleep(0.5)
+            # loop with frequency interval between possible control actions
+            time.sleep(self.frequency)
 
 
 class BeltTelemetryThread(threading.Thread):
@@ -271,11 +300,13 @@ class BeltTelemetryThread(threading.Thread):
     The thread that sets up interaction with the Belt Servos.
     """
 
-    def __init__(self, servo_group, frequency, args=(), kwargs={}):
+    def __init__(self, servo_group, telemetry_topic,
+                 frequency, args=(), kwargs={}):
         super(BeltTelemetryThread, self).__init__(
             name="belt_telemetry_thread", args=args, kwargs=kwargs
         )
         self.sg = servo_group
+        self.telemetry_topic = telemetry_topic
         self.frequency = frequency
         log.info("[btt.__init__] frequency:{0}".format(
             self.frequency))
@@ -284,7 +315,7 @@ class BeltTelemetryThread(threading.Thread):
         while should_loop:
             msg = belt_message(self.sg)
             try:
-                mqttc.publish(GGD_BELT_TELEMETRY_TOPIC, json.dumps(msg), 0)
+                mqttc.publish(self.telemetry_topic, json.dumps(msg), 0)
                 time.sleep(self.frequency)  # 0.1 == 10Hz
             except RuntimeError as re:
                 log.error("[btt.run] RuntimeError:{0}".format(re))
@@ -296,8 +327,15 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('config_file',
                         help="The config file.")
-    parser.add_argument('--frequency', default=3.0,
-                        dest='frequency', type=float,
+    parser.add_argument('--stage_topic', default='/convey/stages',
+                        help="Topic used to communicate belt stage messages.")
+    parser.add_argument('--telemetry_topic', default='/convey/telemetry',
+                        help="Topic used to communicate belt telemetry.")
+    parser.add_argument('--control_frequency', default=0.1,
+                        dest='control_frequency', type=float,
+                        help="Modify the default control frequency.")
+    parser.add_argument('--telemetry_frequency', default=1.0,
+                        dest='telemetry_frequency', type=float,
                         help="Modify the default telemetry sample frequency.")
     parser.add_argument('--speed', default=950,
                         dest='speed', type=int,
@@ -344,8 +382,14 @@ if __name__ == "__main__":
         sg['bone'] = Servo(sp, belt_ids[0], bone_servo_cache)
 
         # Use same Group with one read cache because only monitor thread reads
-        btt = BeltTelemetryThread(sg, frequency=args.frequency)
-        bct = BeltControlThread(sg, cmd_event, args.speed)
+        btt = BeltTelemetryThread(sg,
+                                  telemetry_topic=args.telemetry_topic,
+                                  frequency=args.control_frequency)
+        bct = BeltControlThread(sg, event=cmd_event,
+                                belt_speed=args.speed,
+                                stage_topic=args.stage_topic,
+                                frequency=args.telemetry_frequency)
+
         btt.start()
         bct.start()
 
