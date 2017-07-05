@@ -4,6 +4,10 @@ import png
 import math
 from pixel_object import PixelObject
 
+"""
+Image processor that can find the edges in a PNG image captured by a PiCamera.
+"""
+
 
 class ImageProcessor:
 
@@ -16,11 +20,6 @@ class ImageProcessor:
         self.res_width = res_width
         self.res_height = res_height
         self.stream = picamera.array.PiYUVArray(self.camera)
-        # self.camera.resolution = (96, 96)
-
-        # self.camera.resolution = (1024, 768)
-        # self.jDump = JsonDump()
-        # json_dump(dir(self.camera), 'dump_1.txt')
         self.pixelObjList = []
         self.object_id_center = 0
         self.pixelObjList.append(PixelObject(self.next_obj_id()))
@@ -230,28 +229,6 @@ class ImageProcessor:
 
         # print("nmbr of pre Objects:{0}".format(old_len))
         self.new_one_pixel_png()
-
-    # def process_pixel_object_2(self):
-    #     # make a new png with 1 pixel per object at their respective center
-    #     # IS BEING SKIPPED!
-    #     tmp_pos_list = []
-    #
-    #     for obj in self.pixelObjList:
-    #         for ent in obj.XYset:
-    #             tmp_pos_list.append(ent)
-    #
-    #     rows = []
-    #     for _ in range(96):
-    #         rows.append(range(96))
-    #     for j in range(96):
-    #         for i in range(96):
-    #             if (i, j) in tmp_pos_list:
-    #                 rows[j][i] = 255
-    #             else:
-    #                 rows[j][i] = 0
-    #
-    #     self.save_PNG('PixelObject.png', rows)
-    #     self.new_one_pixel_png()
 
     def new_one_pixel_png(self):
         """

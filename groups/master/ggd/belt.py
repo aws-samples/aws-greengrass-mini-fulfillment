@@ -44,11 +44,11 @@ To act in a coordinated fashion with the other Group's in the
 miniature fulfillment center, this device also subscribes to device shadow in 
 the Master Greengrass Group. The commands that are understood from the master 
 shadow are:
-* `run` - the arm will start executing the stages in order
-* `stop` - the arm will cease operation and go to the stop position
+* `run` - the belt will start the rolling stage
+* `stop` - the belt will cease operation and stop
 
 This device expects to be launched form a command line. To learn more about that 
-command line type: `python arm.py --help`
+command line type: `python belt.py --help`
 """
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

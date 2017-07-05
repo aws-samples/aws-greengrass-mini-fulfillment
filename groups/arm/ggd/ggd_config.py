@@ -10,14 +10,14 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-# master_core_ip = "xx.xx.xx.xx"
-master_core_ip = "10.0.1.41"
+master_core_ip = "xx.xx.xx.xx"
+# master_core_ip = "10.0.1.41"
 master_core_port = 8883
-# sort_arm_ip = "yy.yy.yy.yy"
-sort_arm_ip = "10.0.1.38"
+sort_arm_ip = "yy.yy.yy.yy"
+# sort_arm_ip = "10.0.1.38"
 sort_arm_port = 8883
-# inv_arm_ip = "zz.zz.zz.zz"
-inv_arm_ip = "10.0.1.42"
+inv_arm_ip = "zz.zz.zz.zz"
+# inv_arm_ip = "10.0.1.42"
 inv_arm_port = 8883
 
 master_shadow_name = "MasterBrain"
@@ -29,15 +29,15 @@ convey_topics = [
 ]
 
 sort_bridge_topics = [
-    "/sortarm/telemetry",
-    "/sortarm/errors",
-    "/sortarm/stages"
+    "/arm/telemetry",
+    "/arm/errors",
+    "/arm/stages"
 ]
 
 inv_bridge_topics = [
-    "/invarm/telemetry",
-    "/invarm/errors",
-    "/invarm/stages"
+    "/arm/telemetry",
+    "/arm/errors",
+    "/arm/stages"
 ]
 
 convey_servo_ids = [
