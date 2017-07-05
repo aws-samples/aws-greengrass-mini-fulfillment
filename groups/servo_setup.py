@@ -20,8 +20,7 @@ import requests
 
 dl_name = "dxl_v3_4_3.zip"
 url = "https://github.com/ROBOTIS-GIT/DynamixelSDK/archive/3.4.3.zip"
-inv_arm_dir = "inv_arm/ggd/servo"
-sort_arm_dir = "sort_arm/ggd/servo"
+arm_dir = "arm/ggd/servo"
 master_dir = "master/ggd/servo"
 
 print("[begin] Downloading Dynamixel SDK: {0}".format(url))
@@ -41,8 +40,7 @@ def make_sure_path_exists(path):
         if exception.errno != errno.EEXIST:
             raise
 
-make_sure_path_exists(inv_arm_dir)
-make_sure_path_exists(sort_arm_dir)
+make_sure_path_exists(arm_dir)
 make_sure_path_exists(master_dir)
 
 print("[begin] Unzipping download {0}".format(dl_name))
@@ -79,9 +77,7 @@ try:
     shutil.copytree(os.curdir + '/DynamixelSDK-3.4.3',
                     os.curdir + '/' + master_dir + '/DynamixelSDK-3.4.3')
     shutil.copytree(os.curdir + '/DynamixelSDK-3.4.3',
-                    os.curdir + '/' + sort_arm_dir + '/DynamixelSDK-3.4.3')
-    shutil.copytree(os.curdir + '/DynamixelSDK-3.4.3',
-                    os.curdir + '/' + inv_arm_dir + '/DynamixelSDK-3.4.3')
+                    os.curdir + '/' + arm_dir + '/DynamixelSDK-3.4.3')
 except OSError as ose:
     print("...ERROR copying Dynamixel directory:{0}".format(ose))
     exit(1)
@@ -92,9 +88,7 @@ try:
     shutil.copy(out_fname,
                 os.curdir + '/' + master_dir + '/dynamixel_functions.py')
     shutil.copy(out_fname,
-                os.curdir + '/' + sort_arm_dir + '/dynamixel_functions.py')
-    shutil.copy(out_fname,
-                os.curdir + '/' + inv_arm_dir + '/dynamixel_functions.py')
+                os.curdir + '/' + arm_dir + '/dynamixel_functions.py')
 except OSError as ose:
     print("...ERROR copying modified dynamixel_functions.py:{0}".format(ose))
     exit(1)
