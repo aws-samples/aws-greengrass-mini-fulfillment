@@ -41,8 +41,10 @@ ggd_ca_file_path = "<invalid_cert>"
 
 
 def heartbeat(config_file, topic, frequency=3):
+    # read the config file
     cfg = GroupConfigFile(config_file)
 
+    # determine heartbeat device's thing name and orient MQTT client to GG Core
     heartbeat_name = cfg['devices']['GGD_heartbeat']['thing_name']
     mqttc = AWSIoTMQTTClient(heartbeat_name)
     mqttc.configureEndpoint(ggd_config.inv_arm_ip, ggd_config.inv_arm_port)
@@ -55,6 +57,7 @@ def heartbeat(config_file, topic, frequency=3):
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
     if mqtt_connect(mqttc):
+        # MQTT client has connected to GG Core, start heartbeat messages
         try:
             start = datetime.datetime.now()
             while True:
@@ -62,7 +65,7 @@ def heartbeat(config_file, topic, frequency=3):
 
                 now = datetime.datetime.now()
                 msg = {
-                    "version": "2017-06-08",
+                    "version": "2017-07-05",  # YYYY-MM-DD
                     "ggd_id": heartbeat_name,
                     "hostname": hostname,
                     "data": [

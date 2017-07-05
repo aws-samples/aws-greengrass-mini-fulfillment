@@ -32,6 +32,32 @@ from gg_group_setup import GroupConfigFile
 from stages import ArmStages, NO_BOX_FOUND
 from servo.servode import Servo, ServoProtocol, ServoGroup
 
+"""
+Greengrass Arm device
+
+This Greengrass device controls the mini-fulfillment center 3D printed robotic 
+arm. It accomplishes this using two threads: one thread to control and report 
+upon the arm's movement through `stages` and a separate thread to read and 
+report upon each of the arm's servo telemetry. 
+
+The control stages that the arm device will execute in order, are:
+* `home` - the arm is in or has returned to the ready position
+* `find` - the arm is actively using the end-effector camera to find objects of 
+    the correct size
+* `pick` - the arm has found an object and will attempt to pick-up that object
+* `sort` - the arm has grabbed an object and will place that object at the sort 
+    position
+
+To act in a coordinated fashion with the other Group's in the 
+miniature fulfillment center, this device also subscribes to device shadow in 
+the Master Greengrass Group. The commands that are understood from the master 
+shadow are:
+* `run` - the arm will start executing the stages in order
+* `stop` - the arm will cease operation and go to the stop position
+
+This device expects to be launched form a command line. To learn more about that 
+command line type: `python arm.py --help`
+"""
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('arm')
@@ -153,10 +179,9 @@ def _arm_message(servo_group):
 
 class ArmControlThread(threading.Thread):
     """
-    The thread that sets up control interaction with the Servos.
+    Thread that controls interaction with the Servos through assorted stages.
     """
-    # TODO move control into Lambda - TBD pending determination of Lambdas being
-    #   able to access serial port
+    # TODO move control into Lambda pending being able to access serial port
 
     def __init__(self, servo_group, event, stage_topic, args=(), kwargs={}):
         super(ArmControlThread, self).__init__(
@@ -178,22 +203,32 @@ class ArmControlThread(threading.Thread):
         master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
         log.debug("[arm.__init__] shadowRegisterDeltaCallback()")
 
-    def activate_command(self, cmd):
-
+    def _activate_command(self, cmd):
+        """Use the shared `threading.Event` instance to signal a mini
+        fulfillment shadow command to the running Control thread.
+        """
         self.last_state = self.active_state
         self.active_state = cmd
-        log.info("[arm.activate_command] last_state='{0}' state='{1}'".format(
+        log.info("[arm._activate_command] last_state='{0}' state='{1}'".format(
             self.last_state, cmd))
 
         if self.active_state == 'run':
-            log.info("[arm.activate_command] START RUN")
+            log.info("[arm._activate_command] START RUN")
             self.cmd_event.set()
         elif self.active_state == 'stop':
-            log.info("[arm.activate_command] STOP")
+            log.info("[arm._activate_command] STOP")
             self.cmd_event.clear()
         return
 
     def shadow_mgr(self, payload, status, token):
+        """
+        Process mini fulfillment shadow commands from the Master shadow.
+
+        :param payload: the shadow payload to process
+        :param status: the accepted, rejected, or delta status of the invocation
+        :param token: the token used for tracing this shadow request
+        :return:
+        """
         log.debug("[arm.shadow_mgr] shadow payload:{0}".format(
             json.dumps(json.loads(payload), sort_keys=True)))
 
@@ -207,7 +242,7 @@ class ArmControlThread(threading.Thread):
         if 'sort_arm_cmd' in shady_vals['state']:
             cmd = shady_vals['state']['sort_arm_cmd']
             if cmd in commands:
-                self.activate_command(cmd)
+                self._activate_command(cmd)
 
                 # acknowledge the desired state is now reported
                 master_shadow.shadowUpdate(json.dumps({
