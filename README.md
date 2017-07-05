@@ -67,9 +67,9 @@ organized by Group. Those stages are:
 
 | Group | Control Stages |
 | :--- | :--- |
-| **Inventory** | `... > Home > Finding > Pickup > Shipping > Home > ...` |
+| **Inventory Arm** | `... > Home > Finding > Pickup > Shipping > Home > ...` |
 | **Master** | `..conveyor direction..` |
-| **Sorting** | `... > Home > Finding > Pickup > Sorting > Home > ...` |
+| **Sorting Arm** | `... > Home > Finding > Pickup > Sorting > Home > ...` |
 
 As shown in the video above, even with these simple stages the interaction between 
 the three Groups displays complex, cohesive, and coordinated behaviors.
