@@ -109,12 +109,12 @@
         ```
     1. Instantiate the fully-formed Greengrass Groups with the following commands:
         ```bash
-        $ ./group_setup.py create sort_arm/cfg.json arm --group_name sort_arm
-        $ ./group_setup.py create inv_arm/cfg.json arm --group_name inv_arm
-        $ ./group_setup.py create master master/cfg.json master --group_name master
-        $ ./group_setup.py deploy sort_arm/cfg.json arm
-        $ ./group_setup.py deploy inv_arm/cfg.json arm
-        $ ./group_setup.py deploy master/cfg.json master
+        $ ./group_setup.py create arm arm/sort_arm/cfg.json --group_name sort_arm
+        $ ./group_setup.py create arm arm/inv_arm/cfg.json --group_name inv_arm
+        $ ./group_setup.py create master master/cfg.json --group_name master
+        $ ./group_setup.py deploy sort_arm/cfg.json
+        $ ./group_setup.py deploy inv_arm/cfg.json
+        $ ./group_setup.py deploy master/cfg.json
         ```
 
 1. Follow [these instructions](#tbd_link) to install (but not start) Greengrass on each host
