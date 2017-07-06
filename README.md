@@ -122,8 +122,7 @@ Within the Sort Arm Core, this is the Lambda function:
 There are some noteworthy files in the repository that centralize a fair amount 
 of work around the instantiation of this demonstration.
 - `groups/group_setup.py` – performs all provisioning of each host's Greengrass Group. 
-This file has commands that are useful when instantiating this demo and that  
-demonstrate the use of the Greengrass REST APIs.
+This file has commands that are useful when instantiating this demo and that demonstrate the use of the Greengrass REST APIs.
     - `create <group_type> <config_file>` – creates a Greengrass Group for a given 
     group type and configuration file. Also stores all of the provisioning 
     artifacts (i.e. `GroupID`, `CoreDefinitionId`, etc.) in the local configuration file.
