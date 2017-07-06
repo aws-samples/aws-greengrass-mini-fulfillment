@@ -1,7 +1,7 @@
 #### ToC
 
 | File | Description |
-| :---: | :--- |
+| :--- | :--- |
 | `BOM.md` | the bill of materials necessary for construction|
 | `CONSTR.md` | instructions for physical construction |
 | `INSTALL.md` | instructions for software installation and example provisioning |
