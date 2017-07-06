@@ -124,7 +124,8 @@
         $ ./group_setup.py deploy master/cfg.json
         ```
 
-1. Follow [these instructions](#tbd_link) to install (but not start) Greengrass on each host
+1. Follow [these instructions](http://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html) 
+   to install (but not provision or start) Greengrass on each host.
 1. Copy the directories from the developer local `aws-greengrass-mini-fulfillment` repository 
    to each host. Specifically,
     - `~/aws-greengrass-mini-fulfillment/groups/arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/arm`
