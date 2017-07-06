@@ -6,9 +6,10 @@
 1. On each host make a `~/mini-fulfillment` directory
 1. Back on your development machine, execute the following steps.
     1. Clone this git repo into a directory `~/aws-greengrass-mini-fulfillment/`
-    > **Note**: All subsequent instructions assume the developer's local repository 
-    is in `~/aws-greengrass-mini-fulfillment/` if you chose another directory, 
-    remember to take that into account. 
+    > **Note**: All subsequent instructions assume the developer's local copy of 
+    this repository is in `~/aws-greengrass-mini-fulfillment/` if you chose 
+    another directory, remember to take that into account throughout these 
+    instructions. 
     1. **Per host** [create](http://docs.aws.amazon.com/iot/latest/developerguide/thing-registry.html) 
     the three Greengrass Core things and attach 
     [certificates](http://docs.aws.amazon.com/iot/latest/developerguide/managing-device-certs.html) 
@@ -20,8 +21,9 @@
             | `cloud.pem.crt` | the GG Core's AWS IoT client certificate - **unique cert per host** |
             | `cloud.pem.key` | the GG Core's AWS IoT client private key - **unique key per host** |
             | `cloud.public.pem.key` | the GG Core's AWS IoT client public key - **unique key per host, unused in this example** |
+            | `root-ca.pem` | the downloaded [AWS IoT Root CA](https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem) |
     
-        1. Per host, place the certificate and key files in these directories, respectively.
+        1. Per host, place the certificate, root CA, and key files in these directories, respectively.
             - `~/aws-greengrass-mini-fulfillment/groups/arm/sort_arm`
             - `~/aws-greengrass-mini-fulfillment/groups/arm/inv_arm`
             - `~/aws-greengrass-mini-fulfillment/groups/master/certs`
@@ -130,23 +132,24 @@
         - ..and..
     - `~/aws-greengrass-mini-fulfillment/groups/master` to `master-pi$ ~/mini-fulfillment/groups/master`
         - ...respectively
-1. On the **master** host
+1. On the `master` host
     1. `cd ~/mini-fulfillment/groups/master/`
-    1. `pip install -r requirements.txt`
+    1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
+        > **Note** it can take some time to install `numpy`
     1. `chmod 755 cp_certs.sh servo_build.sh start_master.sh stop_master.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `cp_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
 1. On the `sort_arm` host
     1. `cd ~/mini-fulfillment/groups/arm/`
-    1. `pip install -r requirements.txt`
+    1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
     1. `chmod 755 cp_sort_arm_certs.sh servo_build.sh start_sort_arm.sh stop_arm.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `./cp_sort_arm_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
 1. On the `inv_arm` host
     1. `cd ~/mini-fulfillment/groups/arm/`
-    1. `pip install -r requirements.txt`
+    1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
     1. `chmod 755 cp_inv_arm_certs.sh servo_build.sh start_inv_arm.sh stop_arm.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `./cp_inv_arm_certs.sh`. This will copy the host's certs into the 
