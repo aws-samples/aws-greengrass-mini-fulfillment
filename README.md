@@ -123,13 +123,12 @@ Within the Sort Arm Core, this is the Lambda function:
 There are some noteworthy files in the repository that centralize a fair amount 
 of work around the instantiation of this demonstration.
 - `groups/group_setup.py` – performs all provisioning of each host's Greengrass Group. 
-This file has three commands that are useful when instantiating this demo and that  
+This file has commands that are useful when instantiating this demo and that  
 demonstrate the use of the Greengrass REST APIs.
-    - `create <host_type> <config_file>` – creates a Greengrass Group for a given 
+    - `create <group_type> <config_file>` – creates a Greengrass Group for a given 
     host type and configuration file. Also stores all of the provisioning 
     artifacts (i.e. `GroupID`, `CoreDefinitionId`, etc.) in the local configuration file.
-    - `deploy <host_type> <config_file>` – deploys a previously provisioned 
-    Greengrass Group
+    - `deploy <config_file>` – deploys a previously provisioned Greengrass Group
     - `clean_all <config_file>` – cleans up the entirety of an **un-deployed** 
     Greengrass Group and the locally stored provisioning artifacts.
 - `groups/cert_setup.py` – creates a Certificate Authority (CA) and server certificate 
@@ -141,7 +140,8 @@ for use on a Raspberry Pi with the Raspbian OS.
 ## DIY
 If you'd like to build a copy of this demo yourself you'll want to read both 
 the [installation instructions](docs/INSTALL.md) and the 
-[construction instructions](docs/CONSTR.md).
+[construction instructions](docs/CONSTR.md). Please share any feedback you have 
+or questions you run into here as [Issues](https://github.com/awslabs/aws-greengrass-mini-fulfillment/issues).
 
 ## Special Thanks
 [Brett Francis](https://github.com/brettf) and [Todd Varland](https://github.com/toddvarland) would like to thank the following. Without their 
