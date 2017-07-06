@@ -435,11 +435,15 @@ class ArmGroupType(GroupType):
 
 if __name__ == '__main__':
     """
-    Instantiate a gg_group_setup.GroupCommands object using the two sub-classed
+    Instantiate a `gg_group_setup.GroupCommands` object using the two sub-classed
     GroupType classes. 
     
     GroupCommands will then use the sub-classed GroupTypes to expose the 
-    'create', 'deploy', 'clean_all' and 'clean_file' commands.
+    `create`, `deploy`, `clean_all` and `clean_file` commands.
+    
+    Note: executing `clean_file` will result in stranded provisioned artifacts 
+    in the AWS Greengrass service. These will artifacts will need manual 
+    removal.
     """
     gc = GroupCommands(group_types={
             MasterGroupType.MASTER_TYPE: MasterGroupType,
