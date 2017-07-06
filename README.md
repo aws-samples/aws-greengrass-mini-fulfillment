@@ -17,34 +17,34 @@ available in this repo. We look forward to seeing what you'll do with it.
 ```
 aws-greengrass-mini-fulfillment/
   +- docs/
-  |  +- BOM.md        -- the bill of materials necessary for construction
-  |  +- CONSTR.md     -- instructions for physical construction (TODO)
-  |  +- INSTALL.md    -- instructions for software installation
-  |  +- OPERATE.md    -- instructions for operation of the demo
-  |  +- TIDBITS.md    -- tiny pieces of setup information that might be helpful
-  |  +- TROUBLE.md    -- troubleshooting of install and operation
+  |  +- BOM.md         -- the bill of materials necessary for construction
+  |  +- CONSTR.md      -- instructions for physical construction (TODO)
+  |  +- INSTALL.md     -- instructions for software installation
+  |  +- OPERATE.md     -- instructions for operation of the demo
+  |  +- TIDBITS.md     -- tiny pieces of setup information that might be helpful
+  |  +- TROUBLE.md     -- troubleshooting of install and operation
   |
   +- groups/
-  |  +- cert_setup.py -- generates local certificates used by Greengrass groups 
-  |  +- group_setup.py-- provisions and deploys example Greengrass groups 
-  |  +- servo_setup.py-- prepares the servo communication code for example use  
+  |  +- cert_setup.py  -- generates local certificates used by Greengrass groups 
+  |  +- group_setup.py -- provisions and deploys example Greengrass groups 
+  |  +- servo_setup.py -- prepares the servo communication code for example use  
   |  |
-  |  +- arm/          -- the code and config necessary for an arm host
-  |  |  +- ggd/       -- the Greengrass Devices that will be run on the Host
-  |  |  |  +- servo/  -- the servo communications libraries 
-  |  |  +- inv_arm/   -- the specific config and certs for the `inv_arm` group 
-  |  |  +- sort_arm/  -- the specific config and certs for the `sort_arm` group
+  |  +- arm/           -- the code and config necessary for an arm host
+  |  |  +- ggd/        -- the Greengrass Devices that will be run on the Host
+  |  |  |  +- servo/   -- the servo communications libraries 
+  |  |  +- inv_arm/    -- the specific config and certs for the `inv_arm` group 
+  |  |  +- sort_arm/   -- the specific config and certs for the `sort_arm` group
   |  | 
-  |  +- lambda/       -- the Lambda functions used in the Greengrass groups
+  |  +- lambda/        -- the Lambda functions used in the Greengrass groups
   |  |
-  |  +- master/       -- the directory of the `master` Greengrass group 
-  |     +- certs/     -- the group AWS IoT and local certs to be copied to Core
-  |     +- ggd/       -- the Greengrass Devices that will be run on the Host
-  |        +- certs/  -- the client certs used by GG devices
-  |        +- flask/  -- where the web GG device gets files to serve
-  |        +- servo/  -- the servo communications libraries 
+  |  +- master/        -- the directory of the `master` Greengrass group 
+  |     +- certs/      -- the group AWS IoT and local certs to be copied to Core
+  |     +- ggd/        -- the Greengrass Devices that will be run on the Host
+  |        +- certs/   -- the client certs used by GG devices
+  |        +- flask/   -- where the web GG device gets files to serve
+  |        +- servo/   -- the servo communications libraries 
   |
-  +- models/          -- the models used to 3D print components of this demo
+  +- models/           -- the models used to 3D print components of this demo
   +- LICENSE
   +- README.md -- this file
   +- requirements.txt
