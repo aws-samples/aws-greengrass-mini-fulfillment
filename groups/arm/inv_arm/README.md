@@ -1,1 +1,1 @@
-All the certificates, keys and config files need to go here
+All the certificates, keys, and config files need to go here
