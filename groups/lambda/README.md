@@ -1,0 +1,1 @@
+Code and scripts used to install and operate the Lambda functions used in the `sort_arm`, `inv_arm`, and `master` Greengrass groups.
