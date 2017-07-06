@@ -84,11 +84,11 @@ The high-level, local architecture of the demo is:
 #### Master/Conveyor Host
 There are six processes on this host:
 - the Master Greengrass Core
-- the `heartbeat` Greengrass Device (GGD) process
-- the `bridge` GGD process
-- the `belt` GGD process -- manages the conveyor belt servo
-- the `button` GGD process -- manages the button box's red, green, and white control buttons
-- the `web` GGD process
+- the [`heartbeat`](blob/master/groups/master/ggd/heartbeat.py) Greengrass Device (GGD) process
+- the [`bridge`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/bridge.py) GGD process
+- the [`belt`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/belt.py) GGD process -- manages the conveyor belt servo
+- the [`button`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/button.py) GGD process -- manages the button box's red, green, and white control buttons
+- the [`web`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/web.py) GGD process
 
 Within the Master Core, these are the Lambda functions:
 - `MasterErrorDetector` -- this function monitors local telemetry and detects any error states
