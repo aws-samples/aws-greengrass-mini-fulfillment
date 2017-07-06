@@ -84,15 +84,15 @@ The high-level, local architecture of the demo is:
 #### Master/Conveyor Host
 There are six processes on this host:
 - the Master Greengrass Core
-- the [`heartbeat`](blob/master/groups/master/ggd/heartbeat.py) Greengrass Device (GGD) process
-- the [`bridge`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/bridge.py) GGD process
-- the [`belt`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/belt.py) GGD process -- manages the conveyor belt servo
-- the [`button`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/button.py) GGD process -- manages the button box's red, green, and white control buttons
-- the [`web`](https://github.com/awslabs/aws-greengrass-mini-fulfillment/blob/master/groups/master/ggd/web.py) GGD process
+- the [`heartbeat`](groups/master/ggd/heartbeat.py) Greengrass Device (GGD) process
+- the [`bridge`](groups/master/ggd/bridge.py) GGD process
+- the [`belt`](groups/master/ggd/belt.py) GGD process -- manages the conveyor belt servo
+- the [`button`](groups/master/ggd/button.py) GGD process -- manages the button box's red, green, and white control buttons
+- the [`web`](groups/master/ggd/web.py) GGD process
 
 Within the Master Core, these are the Lambda functions:
-- `MasterErrorDetector` -- this function monitors local telemetry and detects any error states
-- `MasterBrain` -- this function monitors the fabric of telemetry coming from the 
+- [`MasterErrorDetector`](groups/lambda/MasterErrorDetector/error_detector.py) -- this function monitors local telemetry and detects any error states
+- [`MasterBrain`](groups/lambda/MasterBrain/master_brain.py) -- this function monitors the fabric of telemetry coming from the 
   bridges and the local GGDs. This function will decide what to do with respect 
   to current telemetry and errors in the system
 
@@ -102,20 +102,20 @@ visualization that reads data from the Master Core can be seen.
 #### Inventory Arm Host
 There are three processes on this host:
 - the Inventory Arm Greengrass Core
-- the `heartbeat` Greengrass Device (GGD) process
-- the `arm` GGD process
+- the [`heartbeat`](groups/arm/ggd/heartbeat.py) Greengrass Device (GGD) process
+- the [`arm`](groups/arm/ggd/arm.py) GGD process
 
 Within the Inventory Arm Core, this is the Lambda function:
-- `ArmErrorDetector` -- this function monitors local telemetry and detects any error states
+- [`ArmErrorDetector`](groups/lambda/ArmErrorDetector/error_detector.py) -- this function monitors local telemetry and detects any error states
 
 #### Sorting Arm Host
 There are three processes on this host:
 - the Sorting Arm Greengrass Core
-- the `heartbeat` Greengrass Device (GGD) process
-- the `arm` GGD process
+- the [`heartbeat`](groups/arm/ggd/heartbeat.py) Greengrass Device (GGD) process
+- the [`arm`](groups/arm/ggd/arm.py) GGD process
 
 Within the Sort Arm Core, this is the Lambda function:
-- `ArmErrorDetector` -- this function monitors local telemetry and detects any error states
+- [`ArmErrorDetector`](groups/lambda/ArmErrorDetector/error_detector.py) -- this function monitors local telemetry and detects any error states
 
 
 #### Noteworthy Files
