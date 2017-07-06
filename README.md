@@ -11,7 +11,8 @@ in action at re:Invent. Since re:Invent this demo and example has continued to
 evolve and it has been the seed for [other demos](https://youtu.be/dpatdO2uPCA). 
 
 The artifacts, example code, and instructions to construct this demo are now 
-available in this repo. We look forward to seeing what you'll do with it.
+available in this repository as an example. We look forward to seeing what 
+you'll do with it.
 
 #### Directory Structure and Noteworthy Files
 ```
