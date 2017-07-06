@@ -125,7 +125,7 @@ of work around the instantiation of this demonstration.
 This file has commands that are useful when instantiating this demo and that  
 demonstrate the use of the Greengrass REST APIs.
     - `create <group_type> <config_file>` – creates a Greengrass Group for a given 
-    host type and configuration file. Also stores all of the provisioning 
+    group type and configuration file. Also stores all of the provisioning 
     artifacts (i.e. `GroupID`, `CoreDefinitionId`, etc.) in the local configuration file.
     - `deploy <config_file>` – deploys a previously provisioned Greengrass Group
     - `clean_all <config_file>` – cleans up the entirety of an **un-deployed** 
