@@ -8,6 +8,7 @@ Some of the `sort_arm` and `inv_arm` robot arm physical generation is related to
 | `arm/gg-large-swl-base_v3.stl` | inspired by OAR and RAfADA - Licensed under CC-BY-SA 3.0 |
 | `arm/gg_tibia_v3.stl` | inspired by OAR - Licensed under CC-BY-SA 3.0 |
 | `arm/gg_turret_spacer_2-0mm.stl` | inspired by RAfADA - Licensed under CC-BY-SA 3.0 |
+| `arm/gg_base_turn_table.stl` | inspired by RAfADA - Licensed under CC-BY-SA 3.0 |
 | `misc/gg_cube_2inch.stl` | inspired by 4CTO - Public Domain | 
 * See https://creativecommons.org/licenses/by-sa/3.0/ for CC-BY-SA licensing.
 
