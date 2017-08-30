@@ -5,6 +5,10 @@
 1. Configure the three hosts to be on the same network and note each host's IP  
 1. On each host make a `~/mini-fulfillment` directory
 1. Back on your development machine, execute the following steps.
+    1. [Install](http://docs.aws.amazon.com/cli/latest/userguide/installing.html) 
+    the AWS CLI and [configure](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) 
+    it with [Administrator](http://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html) 
+    credentials.   
     1. Clone this git repo into a directory `~/aws-greengrass-mini-fulfillment/`
     > **Note**: All subsequent instructions assume the developer's local copy of 
     this repository is in `~/aws-greengrass-mini-fulfillment/` if you chose 
