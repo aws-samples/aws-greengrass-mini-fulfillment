@@ -17,7 +17,8 @@ Overall the process is:
 The quickest way to assemble the various parts to form a complete robot arm is to 
 assemble them in four separate sections and combine them at the intersection 
 points. The arm's four main parts are in this image:
-![4 main parts](img/doc_images/labeled_image.jpg?raw=true)
+
+![four main parts](img/doc_images/labeled_image.jpg?raw=true)
 
 ### The Shoulder
 
