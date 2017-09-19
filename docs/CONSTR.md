@@ -68,7 +68,7 @@ points. The arm's four main sections are in this image:
 | <img src="img/doc_images/connect_step6.jpg" width="300" style="min-width:300px;"> | In general, when connecting a servo to any other part, start with the fly-wheel in the initial state, indicated by the aligned lines in the plastic. |
 | <img src="img/doc_images/connect_step1.jpg" width="300" style="min-width:300px;"> | Attach the Femur assembly to the Shoulder/Base with the fly-wheel on the servo facing to the left with S3 screws. Use BU-WA washers and an SB screw to fasten the other end of the servo. |
 | <img src="img/doc_images/connect_step2.jpg" width="300" style="min-width:300px;"> | Use one BU-WA washer and SB screw to attach the bottom (or right side when viewing the arm from the back). |
-| <img src="img/doc_images/connect_step3.jpg" width="300" style="min-width:300px;"> | Use four S4 screws to fasten the Claw assembly to the Femur assembly. *Note: that the S screws are needed due to the extra thickness of the Femur.* |
+| <img src="img/doc_images/connect_step3.jpg" width="300" style="min-width:300px;"> | Use four S4 screws to fasten the Claw assembly to the Femur assembly. *Note: the S4 screws are needed due to the extra thickness of the Femur.* |
 | <img src="img/doc_images/connect_step4.jpg" width="300" style="min-width:300px;"> | Attach the Raspberry Pi to the Femur using the velcro strips. |
 | <img src="img/doc_images/connect_step5.jpg" width="300" style="min-width:300px;"> | When attaching the Claw to the Femur, ensure the direction of the claw is as shown. |
 
@@ -76,7 +76,7 @@ points. The arm's four main sections are in this image:
 
 | Image | Instructions | 
 | :--- | :--- |
-| <img src="img/doc_images/power_step1.jpg" width="300" style="min-width:300px;"> | The servos are all daisy chained using the 3P 200mm Robot Cable. Follow the images and connect as shown. |
+| <img src="img/doc_images/power_step1.jpg" width="300" style="min-width:300px;"> | The servos are daisy-chained using the 3P 200mm Robot Cable. Follow the images and connect as shown. |
 | <img src="img/doc_images/power_step2.jpg" width="300" style="min-width:300px;"> | The cable will usually connect the previous servo on the left, and daisy chain out from the right slot. |
 | <img src="img/doc_images/power_step3.jpg" width="300" style="min-width:300px;"> | Between the Elbow servo and Shoulder, you’ll need to splice a longer (by 3”) cable. |
 | <img src="img/doc_images/power_step4.jpg" width="300" style="min-width:300px;"> | From the Elbow, connect to the right servo on the left (`in`) slot and connect the right (`out`) slot to the servo on the left. |
