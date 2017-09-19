@@ -19,43 +19,40 @@ Overall the process is:
 
 # The Shoulder
 
-| <img src="img/doc_images/shoulder_step1.jpg" width="300" style="min-width:300px;"> | *Connect the Servo to the large square spacer using 6 N1 bolts and 6 S3 screws.* |
-| - | :- |
-
-| <img src="img/doc_images/shoulder_step2.jpg" width="300" style="min-width:300px;"> | *Attach the shoulder piece to the servo fly-wheel. Make sure to include the small spacer between the fly-wheel and shoulder piece.* |
-| - | :- |
-
-| <img src="img/doc_images/shoulder_step3.jpg" width="300" style="min-width:300px;"> | *When you have completed it, the should should be pointing so that the four holes are on the left side.* |
-| - | :- |
+| Image | Instructions | 
+| :--- | :--- |
+| ![shoulder_01](img/doc_images/shoulder_step1.jpg) | Connect the Servo to the large square spacer using 6 N1 bolts and 6 S3 screws. |
+| ![shoulder_02](img/doc_images/shoulder_step2.jpg) | Attach the shoulder piece to the servo fly-wheel. Make sure to include the small spacer between the fly-wheel and shoulder piece. |
+| ![shoulder_03](img/doc_images/shoulder_step3.jpg) | When you have completed it, the should should be pointing so that the four holes are on the left side. |
 
 
 # The Claw
 
-| <img src="img/doc_images/claw_step1.jpg" width="300" style="min-width:300px;"> | *Position the servo fly-wheel so that it is pointing downward and use 4 S3 screws to connect the right clamp to the fly-wheel.* |
+| ![claw_01](img/doc_images/claw_step1.jpg) | Position the servo fly-wheel so that it is pointing downward and use 4 S3 screws to connect the right clamp to the fly-wheel. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step2.jpg" width="300" style="min-width:300px;"> | *On the top side, you’ll need to insert the BU washer through the center hole on the clamp and fasten it to the servo using an S4 screw.* |
+| ![claw_02](img/doc_images/claw_step2.jpg) | On the top side, you’ll need to insert the BU washer through the center hole on the clamp and fasten it to the servo using an S4 screw. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step3.jpg" width="300" style="min-width:300px;"> | *Position the Tibia assembly like shown so that the fly-wheel is pointing to the left and pre-insert 6 N1 bolts as shown.* |
+| ![claw_03](img/doc_images/claw_step3.jpg) | Position the Tibia assembly like shown so that the fly-wheel is pointing to the left and pre-insert 6 N1 bolts as shown. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step4.jpg" width="300" style="min-width:300px;"> | *Return the assembly to the original position and attach the left clamp to the servo using 6 S3 screws. Be sure the N1 bolts line up.* |
+| ![claw_04](img/doc_images/claw_step4.jpg) | Return the assembly to the original position and attach the left clamp to the servo using 6 S3 screws. Be sure the N1 bolts line up. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step5.jpg" width="300" style="min-width:300px;"> | *Attach the two camera housing pieces together using an N nut and S3 screw.* |
+| ![claw_05](img/doc_images/claw_step5.jpg) | Attach the two camera housing pieces together using an N nut and S3 screw. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step6.jpg" width="300" style="min-width:300px;"> | *Then, use any 2” long screw and bolt to attach the camera housing to the left clamp.* |
+| ![claw_06](img/doc_images/claw_step6.jpg) | Then, use any 2” long screw and bolt to attach the camera housing to the left clamp. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step7.jpg" width="300" style="min-width:300px;"> | *Place 8 N1 bolts into the slotted holes at the flat end of the Tibia and fasten the FP servo mount using 8 S3 screws.* |
+| ![claw_07](img/doc_images/claw_step7.jpg) | Place 8 N1 bolts into the slotted holes at the flat end of the Tibia and fasten the FP servo mount using 8 S3 screws. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step8.jpg" width="300" style="min-width:300px;"> | *Attach the Claw to the FP04 mount as shown in this photo. Remember to place 4 N1 bolts into the servo slots accordingly and fasten  with S3 screws.* |
+| ![claw_08](img/doc_images/claw_step8.jpg) | Attach the Claw to the FP04 mount as shown in this photo. Remember to place 4 N1 bolts into the servo slots accordingly and fasten  with S3 screws. |
 | - | :- |
 
-| <img src="img/doc_images/claw_step9.jpg" width="300" style="min-width:300px;"> | *Position the servo at the bottom end of the Tibia as shown so the fly-wheel faces the side with the cable slots. Insert 12 N1 bolts into the servo and fasten with S3 screws.* |
+| ![claw_09](img/doc_images/claw_step9.jpg) | Position the servo at the bottom end of the Tibia as shown so the fly-wheel faces the side with the cable slots. Insert 12 N1 bolts into the servo and fasten with S3 screws. |
 | - | :- |
 
 
