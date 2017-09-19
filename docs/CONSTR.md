@@ -26,13 +26,14 @@ points. The arm's four main parts are in this image:
 | :--- | :--- |
 | <img src="img/doc_images/shoulder_step1.jpg" width="300" style="min-width:300px;"> | Connect the Servo to the large square spacer using 6 N1 bolts and 6 S3 screws. |
 | <img src="img/doc_images/shoulder_step2.jpg" width="300" style="min-width:300px;"> | Attach the shoulder piece to the servo fly-wheel. Make sure to include the small spacer between the fly-wheel and shoulder piece. |
-| <img src="img/doc_images/shoulder_step3.jpg" width="300" style="min-width:300px;"> | When you have completed it, the should should be pointing so that the four holes are on the left side. |
+| <img src="img/doc_images/shoulder_step3.jpg" width="300" style="min-width:300px;"> | When you have completed it, the shoulder should be pointing so that the four holes are on the left side. |
 
 
 ### The Claw
 
 | Image | Instructions | 
 | :--- | :--- |
+| <img src="img/doc_images/connect_step6.jpg" width="300" style="min-width:300px;"> | In general, when connecting a servo to any other part, start with the fly-wheel in the initial state, indicated by the aligned lines in the plastic. |
 | <img src="img/doc_images/claw_step1.jpg" width="300" style="min-width:300px;"> | Position the servo fly-wheel so that it is pointing downward and use 4 S3 screws to connect the right clamp to the fly-wheel. |
 | <img src="img/doc_images/claw_step2.jpg" width="300" style="min-width:300px;"> | On the top side, you’ll need to insert the BU washer through the center hole on the clamp and fasten it to the servo using an S4 screw. |
 | <img src="img/doc_images/claw_step3.jpg" width="300" style="min-width:300px;"> | Position the Tibia assembly like shown so that the fly-wheel is pointing to the left and pre-insert 6 N1 bolts as shown. |
@@ -64,12 +65,12 @@ points. The arm's four main parts are in this image:
 
 | Image | Instructions | 
 | :--- | :--- |
+| <img src="img/doc_images/connect_step6.jpg" width="300" style="min-width:300px;"> | In general, when connecting a servo to any other part, start with the fly-wheel in the initial state, indicated by the aligned lines in the plastic. |
 | <img src="img/doc_images/connect_step1.jpg" width="300" style="min-width:300px;"> | Attach the Femur assembly to the Shoulder/Base with the fly-wheel on the servo facing to the left with S3 screws. Use BU-WA washers and an SB screw to fasten the other end of the servo. |
 | <img src="img/doc_images/connect_step2.jpg" width="300" style="min-width:300px;"> | Use 1 BU-WA washer and SB screw to attach the bottom (or right side when viewing the arm from the back). |
 | <img src="img/doc_images/connect_step3.jpg" width="300" style="min-width:300px;"> | Use 4 S4 screws to fasten the Claw assembly to the Femur assembly. Note that the S screws are needed due to the extra thickness of the Femur. |
 | <img src="img/doc_images/connect_step4.jpg" width="300" style="min-width:300px;"> | Attach the Raspberry Pi to the Femur using the velcro strips. |
 | <img src="img/doc_images/connect_step5.jpg" width="300" style="min-width:300px;"> | When attaching the Claw to the Femur, ensure the direction of the claw is as shown. |
-| <img src="img/doc_images/connect_step6.jpg" width="300" style="min-width:300px;"> | In general, when connecting the servo to any other part, start with the fly-wheel in the initial state, indicated by the lines in the plastic. |
 
 ### Cables and Power
 
