@@ -1,8 +1,6 @@
 # AWS Mini Fulfillment Center Construction
 
-Welcome to the AWS Mini Fulfillment Construction Documentation. The quickest way to assemble
-the various parts to form a complete robot arm is to assemble them in 4 separate sections and
-combine them at the intersection points.
+Welcome to the AWS Mini Fulfillment Construction Documentation. 
 
 ## Construction Instructions
 
@@ -16,7 +14,9 @@ Overall the process is:
 1) push green button
 
 ## The Arm
-The arm's four main parts are in this image:
+The quickest way to assemble the various parts to form a complete robot arm is to 
+assemble them in four separate sections and combine them at the intersection 
+points. The arm's four main parts are in this image:
 ![4 main parts](img/doc_images/labeled_image.jpg?raw=true)
 
 ### The Shoulder
