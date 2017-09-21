@@ -14,40 +14,33 @@
     this repository is in `~/aws-greengrass-mini-fulfillment/` if you chose 
     another directory, remember to take that into account throughout these 
     instructions. 
+    1. From the top of the repository at `~/aws-greengrass-mini-fulfillment/`:
+        - Install a virtual environment: `virtualenv venv --python=python2.7`
+        - Activate the virtual environment: `source venv/bin/activate`
+        - Execute: `pip install -r requirements.txt`
     1. **Per host** [create](http://docs.aws.amazon.com/iot/latest/developerguide/thing-registry.html) 
     the three Greengrass Core things and attach 
     [certificates](http://docs.aws.amazon.com/iot/latest/developerguide/managing-device-certs.html) 
-    in AWS IoT.  
-        1. Download and name the certificate and key files as follows:
-      
-            | Filename | Description |
-            | :--- | :--- |
-            | `cloud.pem.crt` | the GG Core's AWS IoT client certificate - **unique cert per host** |
-            | `cloud.pem.key` | the GG Core's AWS IoT client private key - **unique key per host** |
-            | `cloud.public.pem.key` | the GG Core's AWS IoT client public key - **unique key per host, unused in this example** |
-            | `root-ca.pem` | the downloaded [AWS IoT Root CA](https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem) |
-    
-        1. Per host, place the certificate, root CA, and key files in these directories, respectively.
-            - `~/aws-greengrass-mini-fulfillment/groups/arm/sort_arm`
-            - `~/aws-greengrass-mini-fulfillment/groups/arm/inv_arm`
-            - `~/aws-greengrass-mini-fulfillment/groups/master/certs`
-     
-        1. Place the `thing_arn`, `cert_arn`, and `thing_name` values for each host's 
-        GG Core in the Group's `cfg.json` file. 
-            - For example, change `~/aws-greengrass-mini-fulfillment/groups/arm/sort_arm/cfg.json` 
-            with the correct values.
-                ```python
-                { 
-                  "core": {
-                    "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-                    "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-                    "thing_name": "<device_thing_name>"
-                }, ...
-                ```
-            > The specific **thing** names are not important, but to remain consistent 
-            with the host names used in these instructions, one might use: 
-            `master-pi-ggc`, `sort_arm-pi-ggc`, and `inv_arm-pi-ggc`
-    
+    in AWS IoT. Specifically, to easily create the Greengrass Cores for this 
+    example:  
+        1. Execute `cd ~/aws-greengrass-mini-fulfillment/groups`
+        1. ...and then create the cores:
+        ```bash
+        $ ./group_setup.py create-core --thing-name sort_arm-core --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm
+        $ ./group_setup.py create-core --thing-name inv_arm-core --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm
+        $ ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master
+        ```
+        > Note: You can see the details of each created Core recorded in the 
+        `cfg.json` used above in the `create-core` command-line. Example: 
+        ```json
+        {
+          "core": {
+            "cert_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:cert/EXAMPLE10bEXAMPLE34e3a3ac96f3903d040fcca1f7b6e83aba15d95a631622b",
+            "cert_id": "EXAMPLE10bEXAMPLE34e3a3ac96f3903d040fcca1f7b6e83aba15d95a631622b",
+            "thing_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:thing/sort_arm-core",
+            "thing_name": "sort_arm-core"
+          },...
+        ``` 
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT named 
        and located as follows:
         - `~/aws-greengrass-mini-fulfillment/groups/master/ggd/certs`
@@ -83,22 +76,6 @@
           GGD_heartbeat.private.key
           GGD_heartbeat.public.key
           ```
-    1. Update the placeholder values in `~/aws-greengrass-mini-fulfillment/groups/arm/ggd/ggd_config.py` and 
-    `~/aws-greengrass-mini-fulfillment/groups/master/ggd/ggd_config.py` with the host 
-       IPs noted earlier. 
-        - Example:
-        ```python
-          master_core_ip = "xx.xx.xx.xx"  # << placeholder
-          master_core_port = 8883
-          sort_arm_ip = "yy.yy.yy.yy"     # << placeholder
-          sort_arm_port = 8883
-          inv_arm_ip = "zz.zz.zz.zz"      # << placeholder
-          inv_arm_port = 8883
-        ```
-    1. From the top of the repository at `~/aws-greengrass-mini-fulfillment/`:
-        - Install a virtual environment: `virtualenv venv --python=python2.7`
-        - Activate the virtual environment: `source venv/bin/activate`
-        - Execute: `pip install -r requirements.txt`
     1. `cd ~/aws-greengrass-mini-fulfillment/groups/lambda`
     1. `chmod 755 create_lambdas.sh`
     1. `./create_lambdas.sh`
