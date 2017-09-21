@@ -439,9 +439,9 @@ if __name__ == '__main__':
     GroupType classes. 
     
     GroupCommands will then use the sub-classed GroupTypes to expose the 
-    `create`, `deploy`, `clean_all` and `clean_file` commands.
+    `create`, `deploy`, `clean-all` and `clean-file` commands.
     
-    Note: executing `clean_file` will result in stranded provisioned artifacts 
+    Note: executing `clean-file` will result in stranded provisioned artifacts 
     in the AWS Greengrass service. These will artifacts will need manual 
     removal.
     """
