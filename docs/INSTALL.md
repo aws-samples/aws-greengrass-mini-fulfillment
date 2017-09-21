@@ -10,10 +10,11 @@
     it with [Administrator](http://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html) 
     credentials.   
     1. Clone this git repo into a directory `~/aws-greengrass-mini-fulfillment/`
-    > **Note**: All subsequent instructions assume the developer's local copy of 
-    this repository is in `~/aws-greengrass-mini-fulfillment/` if you chose 
-    another directory, remember to take that into account throughout these 
-    instructions. 
+        - Example: `git clone https://github.com/awslabs/aws-greengrass-mini-fulfillment.git ~/aws-greengrass-mini-fulfillment`
+        > **Note**: All subsequent instructions assume the developer's local copy of 
+        this repository is in `~/aws-greengrass-mini-fulfillment/` if you chose 
+        another directory, remember to take that into account throughout these 
+        instructions. 
     1. From the top of the repository at `~/aws-greengrass-mini-fulfillment/`:
         - Install a virtual environment: `virtualenv venv --python=python2.7`
         - Activate the virtual environment: `source venv/bin/activate`
@@ -21,9 +22,8 @@
     1. **Per host** [create](http://docs.aws.amazon.com/iot/latest/developerguide/thing-registry.html) 
     the three Greengrass Core things and attach 
     [certificates](http://docs.aws.amazon.com/iot/latest/developerguide/managing-device-certs.html) 
-    in AWS IoT. Specifically, to easily create the Greengrass Cores for this 
-    example:  
-        1. Execute `cd ~/aws-greengrass-mini-fulfillment/groups`
+    in AWS IoT. Specifically, to create the Greengrass Cores for this example:  
+        1. `cd ~/aws-greengrass-mini-fulfillment/groups`
         1. ...and then create the cores:
         ```bash
         $ ./group_setup.py create-core --thing-name sort_arm-core --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm
@@ -31,7 +31,7 @@
         $ ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master
         ```
         > Note: You can see the details of each created Core recorded in the 
-        `cfg.json` used above in the `create-core` command-line. Example: 
+        `cfg.json` files used above in the `create-core` command-line. Example: 
         ```json
         {
           "core": {
@@ -41,6 +41,15 @@
             "thing_name": "sort_arm-core"
           },...
         ``` 
+    1. Download the `root-ca` file used by all three cores to communicate with 
+    the AWS cloud. Then copy that `root-ca` to directories:
+        ```bash
+        $ curl -o root-ca.pem https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem
+        $ echo arm/sort_arm arm/sort_arm/ggd_certs | xargs -n 1 cp root-ca.pem
+        $ echo arm/inv_arm arm/inv_arm/ggd_certs | xargs -n 1 cp root-ca.pem
+        $ echo master/certs master/ggd/certs | xargs -n 1 cp root-ca.pem
+        $ rm root-ca.pem
+        ```
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT named 
        and located as follows:
         - `~/aws-greengrass-mini-fulfillment/groups/master/ggd/certs`
@@ -80,17 +89,6 @@
     1. `chmod 755 create_lambdas.sh`
     1. `./create_lambdas.sh`
     1. `cd ~/aws-greengrass-mini-fulfillment/groups`
-    1. Using the IP addresses you noted earlier, create a Group Private CA and 
-       Certificate for each Greengrass Core by executing the following commands:
-        ```bash
-        $ python cert_setup.py create sort_arm <sort_arm_host_ip_address>
-        $ python cert_setup.py create inv_arm <inv_arm_host_ip_address>
-        $ python cert_setup.py create master <master_host_ip_address>
-        ```
-        ..and send them to their destinations with this command.
-        ```bash
-        $ ./move_certs.sh
-        ```
     1. Download and prep the servo software used by the Greengrass Devices
         ```bash
         $ ./servo_setup.py

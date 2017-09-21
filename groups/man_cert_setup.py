@@ -40,6 +40,7 @@ def create_group_cert(cli):
     open("{0}-server-public.key".format(prefix), 'wt').write(
         crypto.dump_publickey(crypto.FILETYPE_PEM, pkey=k))
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Greengrass Group Certificate provisioning',
