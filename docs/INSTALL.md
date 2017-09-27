@@ -28,10 +28,10 @@
         ```bash
         $ ./group_setup.py create-core --thing-name sort_arm-core --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm
         $ ./group_setup.py create-core --thing-name inv_arm-core --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm
-        $ ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master
+        $ ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master/certs
         ```
         > Note: You can see the details of each created Core recorded in the 
-        `cfg.json` files used above in the `create-core` command-line. Example: 
+        `cfg.json` files used above in the `create-core` command. Example: 
         ```json
         {
           "core": {
@@ -42,55 +42,44 @@
           },...
         ``` 
     1. Download the `root-ca` file used by all three cores to communicate with 
-    the AWS cloud. Then copy that `root-ca` to directories:
+    the AWS cloud. Then copy that `root-ca` to the proper directories:
         ```bash
+        $ cd ~/aws-greengrass-mini-fulfillment/groups
         $ curl -o root-ca.pem https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem
         $ echo arm/sort_arm arm/sort_arm/ggd_certs | xargs -n 1 cp root-ca.pem
         $ echo arm/inv_arm arm/inv_arm/ggd_certs | xargs -n 1 cp root-ca.pem
         $ echo master/certs master/ggd/certs | xargs -n 1 cp root-ca.pem
         $ rm root-ca.pem
         ```
-    1. Create the Greengrass Device **things** and **certificates** in AWS IoT named 
-       and located as follows:
-        - `~/aws-greengrass-mini-fulfillment/groups/master/ggd/certs`
-          ```
-          GGD_belt.certificate.pem.crt
-          GGD_belt.private.key
-          GGD_belt.public.key
-          GGD_bridge.certificate.pem.crt
-          GGD_bridge.private.key
-          GGD_bridge.public.key
-          GGD_heartbeat.certificate.pem.crt
-          GGD_heartbeat.private.key
-          GGD_heartbeat.public.key
-          GGD_web.certificate.pem.crt
-          GGD_web.private.key
-          GGD_web.public.key
-          ```
-        - `~/aws-greengrass-mini-fulfillment/groups/arm/sort_arm/ggd_certs`
-          ```
-          GGD_arm.certificate.pem.crt
-          GGD_arm.private.key
-          GGD_arm.public.key
-          GGD_heartbeat.certificate.pem.crt
-          GGD_heartbeat.private.key
-          GGD_heartbeat.public.key
-          ```
-        - `~/aws-greengrass-mini-fulfillment/groups/arm/inv_arm/ggd_certs`
-          ```
-          GGD_arm.certificate.pem.crt
-          GGD_arm.private.key
-          GGD_arm.public.key
-          GGD_heartbeat.certificate.pem.crt
-          GGD_heartbeat.private.key
-          GGD_heartbeat.public.key
-          ```
-    1. `cd ~/aws-greengrass-mini-fulfillment/groups/lambda`
-    1. `chmod 755 create_lambdas.sh`
-    1. `./create_lambdas.sh`
-    1. `cd ~/aws-greengrass-mini-fulfillment/groups`
+    1. Create the Greengrass Device **things** and **certificates** in AWS IoT 
+        as follows:
+        ```bash
+        $ cd ~/aws-greengrass-mini-fulfillment/groups
+        $ ./group_setup.py create-devices --thing-names '[GGD_arm,GGD_heartbeat]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
+        $ ./group_setup.py create-devices --thing-names '[GGD_arm,GGD_heartbeat]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
+        $ ./group_setup.py create-devices --thing-names '[GGD_belt,GGD_bridge,GGD_heartbeat,GGD_web]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
+        ```
+        > Note: You can see the details of each create Device recorded in the 
+        `cfg.json` files used above in the `create-devices` command. Example:
+        ```json
+          ...
+          "devices": {
+            "GGD_arm": {
+              "cert_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:cert/EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
+              "cert_id": "EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
+              "thing_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:thing/GGD_arm",
+              "thing_name": "GGD_arm"
+            },...
+        ```
+    1. Create the Greengrass Group's Lambda functions
+        ```bash
+        $ cd ~/aws-greengrass-mini-fulfillment/groups/lambda
+        $ chmod 755 create_lambdas.sh
+        $ ./create_lambdas.sh
+        ```
     1. Download and prep the servo software used by the Greengrass Devices
         ```bash
+        $ cd ~/aws-greengrass-mini-fulfillment/groups
         $ ./servo_setup.py
         ```
     1. Instantiate the fully-formed Greengrass Groups with the following commands:
