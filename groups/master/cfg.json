@@ -14,40 +14,11 @@
     "version_arn": ""
   },
   "devices": {
-    "GGD_belt": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
-    },
-    "GGD_bridge": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<bridge_thing_name>",
-      "thing_name": "<bridge_thing_name>"
-    },
-    "GGD_button": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
-    },
-    "GGD_heartbeat": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
-    },
-    "GGD_inv_arm": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
-    },
-    "GGD_sort_arm": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
-    },
-    "GGD_web": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
+    "device_thing_name": {
+      "cert_arn": "",
+      "cert_id": "",
+      "thing_arn": "",
+      "thing_name": ""
     }
   },
   "func_def": {
