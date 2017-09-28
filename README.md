@@ -20,7 +20,7 @@ aws-greengrass-mini-fulfillment/
   +- docs/
   |  +- BOM.md         -- the bill of materials necessary for construction
   |  +- CONSTR.md      -- instructions for physical construction (TODO)
-  |  +- INSTALL.md     -- instructions for software installation
+  |  +- INSTALL.md     -- instructions for software provisioning and install
   |  +- OPERATE.md     -- instructions for operation of the demo
   |  +- TIDBITS.md     -- tiny pieces of setup information that might be helpful
   |  +- TROUBLE.md     -- troubleshooting of install and operation
