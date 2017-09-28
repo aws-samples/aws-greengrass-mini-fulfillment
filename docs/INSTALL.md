@@ -19,13 +19,12 @@
         - Install a virtual environment: `virtualenv venv --python=python2.7`
         - Activate the virtual environment: `source venv/bin/activate`
         - Execute: `pip install -r requirements.txt`
-    1. **Per host** [create](http://docs.aws.amazon.com/iot/latest/developerguide/thing-registry.html) 
-    the three Greengrass Core things and attach 
+    1. [Create](http://docs.aws.amazon.com/iot/latest/developerguide/thing-registry.html) 
+    the three Greengrass Core **things** and attach 
     [certificates](http://docs.aws.amazon.com/iot/latest/developerguide/managing-device-certs.html) 
     in AWS IoT. Specifically, to create the Greengrass Cores for this example:  
-        1. `cd ~/aws-greengrass-mini-fulfillment/groups`
-        1. ...and then create the cores:
         ```bash
+        $ cd ~/aws-greengrass-mini-fulfillment/groups
         $ ./group_setup.py create-core --thing-name sort_arm-core --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm
         $ ./group_setup.py create-core --thing-name inv_arm-core --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm
         $ ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master/certs
@@ -54,7 +53,6 @@
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT 
         as follows:
         ```bash
-        $ cd ~/aws-greengrass-mini-fulfillment/groups
         $ ./group_setup.py create-devices --thing-names '[GGD_arm,GGD_heartbeat]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
         $ ./group_setup.py create-devices --thing-names '[GGD_arm,GGD_heartbeat]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
         $ ./group_setup.py create-devices --thing-names '[GGD_belt,GGD_bridge,GGD_heartbeat,GGD_web]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
@@ -73,34 +71,37 @@
         ```
     1. Create the Greengrass Group's Lambda functions
         ```bash
-        $ cd ~/aws-greengrass-mini-fulfillment/groups/lambda
-        $ chmod 755 create_lambdas.sh
-        $ ./create_lambdas.sh
+        $ ./lambda_setup.py create lambda/MasterBrain/cfg_lambda.json
+        $ ./lambda_setup.py create lambda/MasterErrorDetector/cfg_lambda.json
+        $ ./lambda_setup.py create lambda/ArmErrorDetector/cfg_lambda.json
+        ```
+    1. Associate the Lambda functions with the proper Greengrass Groups
+        ```bash
+        $ ./group_setup.py associate-lambda ./arm/sort_arm/cfg.json ./lambda/ArmErrorDetector/cfg_lambda.json
+        $ ./group_setup.py associate-lambda ./arm/inv_arm/cfg.json ./lambda/ArmErrorDetector/cfg_lambda.json
+        $ ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterBrain/cfg_lambda.json
+        $ ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterErrorDetector/cfg_lambda.json
         ```
     1. Download and prep the servo software used by the Greengrass Devices
         ```bash
-        $ cd ~/aws-greengrass-mini-fulfillment/groups
         $ ./servo_setup.py
         ```
     1. Instantiate the fully-formed Greengrass Groups with the following commands:
         ```bash
-        $ ./group_setup.py create arm arm/sort_arm/cfg.json --group_name sort_arm
-        $ ./group_setup.py create arm arm/inv_arm/cfg.json --group_name inv_arm
-        $ ./group_setup.py create master master/cfg.json --group_name master
-        $ ./group_setup.py deploy sort_arm/cfg.json
-        $ ./group_setup.py deploy inv_arm/cfg.json
-        $ ./group_setup.py deploy master/cfg.json
+        $ ./group_setup.py create arm ./arm/sort_arm/cfg.json --group_name sort_arm
+        $ ./group_setup.py create arm ./arm/inv_arm/cfg.json --group_name inv_arm
+        $ ./group_setup.py create master ./master/cfg.json --group_name master
+        $ ./group_setup.py deploy ./sort_arm/cfg.json
+        $ ./group_setup.py deploy ./inv_arm/cfg.json
+        $ ./group_setup.py deploy ./master/cfg.json
         ```
-
 1. Follow [these instructions](http://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html) 
    to install (but not provision or start) Greengrass on each host.
 1. Copy the directories from the developer local `aws-greengrass-mini-fulfillment` repository 
-   to each host. Specifically,
+   to each of the three Raspberry Pi hosts. Specifically,
     - `~/aws-greengrass-mini-fulfillment/groups/arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/arm`
     - `~/aws-greengrass-mini-fulfillment/groups/arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/arm`
-        - ..and..
     - `~/aws-greengrass-mini-fulfillment/groups/master` to `master-pi$ ~/mini-fulfillment/groups/master`
-        - ...respectively
 1. On the `master` host
     1. `cd ~/mini-fulfillment/groups/master/`
     1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`

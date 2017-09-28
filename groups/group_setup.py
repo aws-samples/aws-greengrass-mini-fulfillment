@@ -13,8 +13,10 @@
 # permissions and limitations under the License.
 
 import fire
+import json
 import logging
 
+from gg_group_setup import GroupConfigFile
 from gg_group_setup import GroupCommands
 from gg_group_setup import GroupType
 
@@ -433,21 +435,50 @@ class ArmGroupType(GroupType):
         return definition
 
 
+class MiniFulfillmentGroupCommands(GroupCommands):
+
+    def __init__(self):
+        super(MiniFulfillmentGroupCommands, self).__init__(group_types={
+            MasterGroupType.MASTER_TYPE: MasterGroupType,
+            ArmGroupType.ARM_TYPE: ArmGroupType
+        })
+
+    @staticmethod
+    def associate_lambda(group_config, lambda_config):
+        """
+        Associate the Lambda described in the `lambda_config` with the
+        Greengrass Group described by the `group_config`
+
+        :param group_config: `gg_group_setup.GroupConfigFile` to store the group
+        :param lambda_config: the configuration describing the Lambda to
+            associate with the Greengrass Group
+
+        :return:
+        """
+        with open(lambda_config, "r") as f:
+            cfg = json.load(f)
+
+        config = GroupConfigFile(config_file=group_config)
+
+        lambdas = config['lambda_functions']
+        lambdas[cfg['func_name']] = {
+            'arn': cfg['lambda_arn'],
+            'arn_qualifier': cfg['lambda_alias']
+        }
+
+        config['lambda_functions'] = lambdas
+
+
 if __name__ == '__main__':
     """
-    Instantiate a `gg_group_setup.GroupCommands` object using the two sub-classed
-    GroupType classes. 
+    Instantiate a subclass of the `gg_group_setup.GroupCommands` object that 
+    uses the two sub-classed GroupType classes. 
     
-    GroupCommands will then use the sub-classed GroupTypes to expose the 
-    `create`, `deploy`, `clean-all` and `clean-file` commands.
+    The sub-class of GroupCommands will then use the sub-classed GroupTypes to 
+    expose the `create`, `deploy`, `clean-all`, `clean-file`, etc. commands.
     
     Note: executing `clean-file` will result in stranded provisioned artifacts 
     in the AWS Greengrass service. These will artifacts will need manual 
     removal.
     """
-    gc = GroupCommands(group_types={
-            MasterGroupType.MASTER_TYPE: MasterGroupType,
-            ArmGroupType.ARM_TYPE: ArmGroupType
-        }
-    )
-    fire.Fire(gc)
+    fire.Fire(MiniFulfillmentGroupCommands())

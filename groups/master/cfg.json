@@ -32,12 +32,12 @@
   },
   "lambda_functions": {
     "MasterBrain": {
-      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterBrain:<alias>",
-      "arn_qualifier": "<alias>"
+      "arn": "",
+      "arn_qualifier": ""
     },
     "MasterErrorDetector": {
-      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:MasterErrorDetector:<alias>",
-      "arn_qualifier": "<alias>"
+      "arn": "",
+      "arn_qualifier": ""
     }
   },
   "logger_def": {

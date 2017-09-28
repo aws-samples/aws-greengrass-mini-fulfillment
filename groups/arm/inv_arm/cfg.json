@@ -25,8 +25,8 @@
   },
   "lambda_functions": {
     "ArmErrorDetector": {
-      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:ArmErrorDetector:<alias>",
-      "arn_qualifier": "<alias>"
+      "arn": "",
+      "arn_qualifier": ""
     }
   },
   "logger_def": {
