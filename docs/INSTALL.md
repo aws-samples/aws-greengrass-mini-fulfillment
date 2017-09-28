@@ -88,13 +88,14 @@
         ```
     1. Instantiate the fully-formed Greengrass Groups with the following commands:
         ```bash
-        $ ./group_setup.py create arm ./arm/sort_arm/cfg.json --group_name sort_arm
-        $ ./group_setup.py create arm ./arm/inv_arm/cfg.json --group_name inv_arm
+        $ ./group_setup.py create sort_arm ./arm/sort_arm/cfg.json --group-name sort_arm
+        $ ./group_setup.py create inv_arm ./arm/inv_arm/cfg.json --group_name inv_arm
         $ ./group_setup.py create master ./master/cfg.json --group_name master
         $ ./group_setup.py deploy ./sort_arm/cfg.json
         $ ./group_setup.py deploy ./inv_arm/cfg.json
         $ ./group_setup.py deploy ./master/cfg.json
         ```
+        > Note: the `--group-name` options above can be a name of your choosing
 1. Follow [these instructions](http://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html) 
    to install (but not provision or start) Greengrass on each host.
 1. Copy the directories from the developer local `aws-greengrass-mini-fulfillment` repository 
