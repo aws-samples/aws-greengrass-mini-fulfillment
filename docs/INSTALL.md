@@ -53,8 +53,8 @@
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT 
         as follows:
         ```bash
-        $ ./group_setup.py create-devices --thing-names '[GGD_arm,GGD_heartbeat]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
-        $ ./group_setup.py create-devices --thing-names '[GGD_arm,GGD_heartbeat]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
+        $ ./group_setup.py create-devices --thing-names '[GGD_sort_arm,GGD_heartbeat]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
+        $ ./group_setup.py create-devices --thing-names '[GGD_inv_arm,GGD_heartbeat]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
         $ ./group_setup.py create-devices --thing-names '[GGD_belt,GGD_bridge,GGD_heartbeat,GGD_web]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
         ```
         > Note: You can see the details of each create Device recorded in the 
