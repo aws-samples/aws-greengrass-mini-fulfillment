@@ -242,7 +242,7 @@ class MasterGroupType(GroupType):
             },
             {  # from InvArm arm device to Master Greengrass Core local shadow
                 "Id": "84",
-                "Source": d['GGD_inv_arm']['thing_arn'],
+                "Source": d['GGD_inv_arm']['thing_arn'],  # GGD matches ArmType
                 "Subject": "$aws/things/MasterBrain/shadow/get",
                 "Target": "GGShadowService"
             },
@@ -250,11 +250,11 @@ class MasterGroupType(GroupType):
                 "Id": "85",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/get/#",
-                "Target": d['GGD_inv_arm']['thing_arn']
+                "Target": d['GGD_inv_arm']['thing_arn']  # GGD matches ArmType
             },
             {  # from InvArm arm device to Master Greengrass Core local shadow
                 "Id": "86",
-                "Source": d['GGD_inv_arm']['thing_arn'],
+                "Source": d['GGD_inv_arm']['thing_arn'],  # GGD matches ArmType
                 "Subject": "$aws/things/MasterBrain/shadow/update",
                 "Target": "GGShadowService"
             },
@@ -262,11 +262,11 @@ class MasterGroupType(GroupType):
                 "Id": "87",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/update/#",
-                "Target": d['GGD_inv_arm']['thing_arn']
+                "Target": d['GGD_inv_arm']['thing_arn']  # GGD matches ArmType
             },
             {  # from SortArm arm device to Master Greengrass Core local shadow
                 "Id": "92",
-                "Source": d['GGD_sort_arm']['thing_arn'],
+                "Source": d['GGD_sort_arm']['thing_arn'],  # GGD matches ArmType
                 "Subject": "$aws/things/MasterBrain/shadow/get",
                 "Target": "GGShadowService"
             },
@@ -274,11 +274,11 @@ class MasterGroupType(GroupType):
                 "Id": "93",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/get/#",
-                "Target": d['GGD_sort_arm']['thing_arn']
+                "Target": d['GGD_sort_arm']['thing_arn']  # GGD matches ArmType
             },
             {  # from SortArm arm device to Master Greengrass Core local shadow
                 "Id": "94",
-                "Source": d['GGD_sort_arm']['thing_arn'],
+                "Source": d['GGD_sort_arm']['thing_arn'],  # GGD matches ArmType
                 "Subject": "$aws/things/MasterBrain/shadow/update",
                 "Target": "GGShadowService"
             },
@@ -286,7 +286,7 @@ class MasterGroupType(GroupType):
                 "Id": "95",
                 "Source": "GGShadowService",
                 "Subject": "$aws/things/MasterBrain/shadow/update/#",
-                "Target": d['GGD_sort_arm']['thing_arn']
+                "Target": d['GGD_sort_arm']['thing_arn']  # GGD matches ArmType
             },
             {  # from Master heartbeat device to AWS cloud
                 "Id": "97",
@@ -315,6 +315,7 @@ class ArmGroupType(GroupType):
         super(ArmGroupType, self).__init__(
             type_name=ArmGroupType.ARM_TYPE, config=config, region=region
         )
+        self.arm_ggd_name = 'GGD_arm'
 
     def get_core_definition(self, config):
         """
@@ -347,8 +348,8 @@ class ArmGroupType(GroupType):
         definition = [
             {
                 "Id": "{0}_20".format(self.type_name),
-                "ThingArn": cfg['devices']['GGD_arm']['thing_arn'],
-                "CertificateArn": cfg['devices']['GGD_arm']['cert_arn'],
+                "ThingArn": cfg['devices'][self.arm_ggd_name]['thing_arn'],
+                "CertificateArn": cfg['devices'][self.arm_ggd_name]['cert_arn'],
                 "SyncShadow": False
             },
             {
@@ -386,19 +387,19 @@ class ArmGroupType(GroupType):
         definition = [
             {  # from Group's arm device to bridge device
                 "Id": "40",
-                "Source": d['GGD_arm']['thing_arn'],
+                "Source": d[self.arm_ggd_name]['thing_arn'],
                 "Subject": s["all"],
                 "Target": d['GGD_bridge']['thing_arn']
             },
             {  # from Group's arm device to AWS cloud
                 "Id": "41",
-                "Source": d['GGD_arm']['thing_arn'],
+                "Source": d[self.arm_ggd_name]['thing_arn'],
                 "Subject": s['stages'],
                 "Target": "cloud"
             },
             {  # from Group's arm device ArmErrorDetector Lambda
                 "Id": "42",
-                "Source": d['GGD_arm']['thing_arn'],
+                "Source": d[self.arm_ggd_name]['thing_arn'],
                 "Subject": s['telemetry'],
                 "Target": l['ArmErrorDetector']['arn']
             },
@@ -435,12 +436,33 @@ class ArmGroupType(GroupType):
         return definition
 
 
+class SortArmGroupType(ArmGroupType):
+    ARM_TYPE = 'sort_arm'
+
+    def __init__(self, config=None, region='us-west-2'):
+        super(ArmGroupType, self).__init__(
+            type_name=ArmGroupType.ARM_TYPE, config=config, region=region
+        )
+        self.arm_ggd_name = 'GGD_sort_arm'
+
+
+class InvArmGroupType(ArmGroupType):
+    ARM_TYPE = 'inv_arm'
+
+    def __init__(self, config=None, region='us-west-2'):
+        super(ArmGroupType, self).__init__(
+            type_name=ArmGroupType.ARM_TYPE, config=config, region=region
+        )
+        self.arm_ggd_name = 'GGD_inv_arm'
+
+
 class MiniFulfillmentGroupCommands(GroupCommands):
 
     def __init__(self):
         super(MiniFulfillmentGroupCommands, self).__init__(group_types={
             MasterGroupType.MASTER_TYPE: MasterGroupType,
-            ArmGroupType.ARM_TYPE: ArmGroupType
+            SortArmGroupType.ARM_TYPE: SortArmGroupType,
+            InvArmGroupType.ARM_TYPE: InvArmGroupType
         })
 
     @staticmethod
