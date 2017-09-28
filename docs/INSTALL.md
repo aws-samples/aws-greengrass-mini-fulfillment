@@ -62,11 +62,11 @@
         ```json
           ...
           "devices": {
-            "GGD_arm": {
+            "GGD_sort_arm": {
               "cert_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:cert/EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
               "cert_id": "EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
-              "thing_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:thing/GGD_arm",
-              "thing_name": "GGD_arm"
+              "thing_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:thing/GGD_sort_arm",
+              "thing_name": "GGD_sort_arm"
             },...
         ```
     1. Create the Greengrass Group's Lambda functions
