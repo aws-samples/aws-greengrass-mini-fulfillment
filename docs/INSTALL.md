@@ -53,9 +53,10 @@
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT 
         as follows:
         ```bash
-        ./group_setup.py create-devices --thing-names '[sort_arm_ggd,sort_heartbeat_ggd]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
-        ./group_setup.py create-devices --thing-names '[inv_arm_ggd,inv_heartbeat_ggd]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
+        ./group_setup.py create-devices --thing-names '[sort_arm_ggd,sort_heartbeat_ggd,bridge_ggd]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
+        ./group_setup.py create-devices --thing-names '[inv_arm_ggd,inv_heartbeat_ggd,bridge_ggd]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
         ./group_setup.py create-devices --thing-names '[button_ggd,belt_ggd,bridge_ggd,heartbeat_ggd,web_ggd]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
+        ./group_setup.py create-devices --thing-names '[inv_arm_ggd,sort_arm_ggd]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs --append
         ```
         > Note: You can see the details of each create Device recorded in the 
         `cfg.json` files used above in the `create-devices` command. Example:
@@ -65,8 +66,8 @@
             "GGD_sort_arm": {
               "cert_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:cert/EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
               "cert_id": "EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
-              "thing_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:thing/GGD_sort_arm",
-              "thing_name": "GGD_sort_arm"
+              "thing_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:thing/sort_arm_ggd",
+              "thing_name": "sort_arm_ggd"
             },...
         ```
     1. Create the Greengrass Group's Lambda functions
