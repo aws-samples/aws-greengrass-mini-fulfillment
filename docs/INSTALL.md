@@ -24,10 +24,10 @@
     [certificates](http://docs.aws.amazon.com/iot/latest/developerguide/managing-device-certs.html) 
     in AWS IoT. Specifically, to create the Greengrass Cores for this example:  
         ```bash
-        $ cd ~/aws-greengrass-mini-fulfillment/groups
-        $ ./group_setup.py create-core --thing-name sort_arm-core --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm
-        $ ./group_setup.py create-core --thing-name inv_arm-core --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm
-        $ ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master/certs
+        cd ~/aws-greengrass-mini-fulfillment/groups
+        ./group_setup.py create-core --thing-name sort_arm-core --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm
+        ./group_setup.py create-core --thing-name inv_arm-core --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm
+        ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master/certs
         ```
         > Note: You can see the details of each created Core recorded in the 
         `cfg.json` files used above in the `create-core` command. Example: 
@@ -43,19 +43,19 @@
     1. Download the `root-ca` file used by all three cores to communicate with 
     the AWS cloud. Then copy that `root-ca` to the proper directories:
         ```bash
-        $ cd ~/aws-greengrass-mini-fulfillment/groups
-        $ curl -o root-ca.pem https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem
-        $ echo arm/sort_arm arm/sort_arm/ggd_certs | xargs -n 1 cp root-ca.pem
-        $ echo arm/inv_arm arm/inv_arm/ggd_certs | xargs -n 1 cp root-ca.pem
-        $ echo master/certs master/ggd/certs | xargs -n 1 cp root-ca.pem
-        $ rm root-ca.pem
+        cd ~/aws-greengrass-mini-fulfillment/groups
+        curl -o root-ca.pem https://www.symantec.com/content/en/us/enterprise/verisign/roots/VeriSign-Class%203-Public-Primary-Certification-Authority-G5.pem
+        echo arm/sort_arm arm/sort_arm/ggd_certs | xargs -n 1 cp root-ca.pem
+        echo arm/inv_arm arm/inv_arm/ggd_certs | xargs -n 1 cp root-ca.pem
+        echo master/certs master/ggd/certs | xargs -n 1 cp root-ca.pem
+        rm root-ca.pem
         ```
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT 
         as follows:
         ```bash
-        $ ./group_setup.py create-devices --thing-names '[GGD_sort_arm,GGD_heartbeat]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
-        $ ./group_setup.py create-devices --thing-names '[GGD_inv_arm,GGD_heartbeat]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
-        $ ./group_setup.py create-devices --thing-names '[GGD_belt,GGD_bridge,GGD_heartbeat,GGD_web]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
+        ./group_setup.py create-devices --thing-names '[GGD_sort_arm,GGD_heartbeat]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
+        ./group_setup.py create-devices --thing-names '[GGD_inv_arm,GGD_heartbeat]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
+        ./group_setup.py create-devices --thing-names '[GGD_belt,GGD_bridge,GGD_heartbeat,GGD_web]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
         ```
         > Note: You can see the details of each create Device recorded in the 
         `cfg.json` files used above in the `create-devices` command. Example:
@@ -71,29 +71,29 @@
         ```
     1. Create the Greengrass Group's Lambda functions
         ```bash
-        $ ./lambda_setup.py create lambda/MasterBrain/cfg_lambda.json
-        $ ./lambda_setup.py create lambda/MasterErrorDetector/cfg_lambda.json
-        $ ./lambda_setup.py create lambda/ArmErrorDetector/cfg_lambda.json
+        ./lambda_setup.py create lambda/MasterBrain/cfg_lambda.json
+        ./lambda_setup.py create lambda/MasterErrorDetector/cfg_lambda.json
+        ./lambda_setup.py create lambda/ArmErrorDetector/cfg_lambda.json
         ```
     1. Associate the Lambda functions with the proper Greengrass Groups
         ```bash
-        $ ./group_setup.py associate-lambda ./arm/sort_arm/cfg.json ./lambda/ArmErrorDetector/cfg_lambda.json
-        $ ./group_setup.py associate-lambda ./arm/inv_arm/cfg.json ./lambda/ArmErrorDetector/cfg_lambda.json
-        $ ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterBrain/cfg_lambda.json
-        $ ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterErrorDetector/cfg_lambda.json
+        ./group_setup.py associate-lambda ./arm/sort_arm/cfg.json ./lambda/ArmErrorDetector/cfg_lambda.json
+        ./group_setup.py associate-lambda ./arm/inv_arm/cfg.json ./lambda/ArmErrorDetector/cfg_lambda.json
+        ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterBrain/cfg_lambda.json
+        ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterErrorDetector/cfg_lambda.json
         ```
     1. Download and prep the servo software used by the Greengrass Devices
         ```bash
-        $ ./servo_setup.py
+        ./servo_setup.py
         ```
     1. Instantiate the fully-formed Greengrass Groups with the following commands:
         ```bash
-        $ ./group_setup.py create sort_arm ./arm/sort_arm/cfg.json --group-name sort_arm
-        $ ./group_setup.py create inv_arm ./arm/inv_arm/cfg.json --group_name inv_arm
-        $ ./group_setup.py create master ./master/cfg.json --group_name master
-        $ ./group_setup.py deploy ./sort_arm/cfg.json
-        $ ./group_setup.py deploy ./inv_arm/cfg.json
-        $ ./group_setup.py deploy ./master/cfg.json
+        ./group_setup.py create sort_arm ./arm/sort_arm/cfg.json --group-name sort_arm
+        ./group_setup.py create inv_arm ./arm/inv_arm/cfg.json --group_name inv_arm
+        ./group_setup.py create master ./master/cfg.json --group_name master
+        ./group_setup.py deploy ./sort_arm/cfg.json
+        ./group_setup.py deploy ./inv_arm/cfg.json
+        ./group_setup.py deploy ./master/cfg.json
         ```
         > Note: the `--group-name` options above can be a name of your choosing
 1. Follow [these instructions](http://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html) 
