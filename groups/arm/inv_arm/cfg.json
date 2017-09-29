@@ -13,7 +13,14 @@
     "id": "",
     "version_arn": ""
   },
-  "devices": {},
+  "devices": {
+    "device_thing_name": {
+      "cert_arn": "",
+      "cert_id": "",
+      "thing_arn": "",
+      "thing_name": ""
+    }
+  },
   "func_def": {
     "id": "",
     "version_arn": ""
