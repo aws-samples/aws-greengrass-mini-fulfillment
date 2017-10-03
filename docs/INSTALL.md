@@ -2,6 +2,7 @@
 # Installation Instructions
 1. Install OS (Jessie-Lite Sept) on three hosts.
     - this demo has been built using Raspberry Pi 3 computers
+    > Note: Make sure Python 2.7.12+ is installed on the hosts
 1. Configure the three hosts to be on the same network and note each host's IP  
 1. On each host make a `~/mini-fulfillment` directory
 1. Back on your development machine, execute the following steps.
@@ -83,6 +84,16 @@
         ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterBrain/cfg_lambda.json
         ./group_setup.py associate-lambda ./master/cfg.json ./lambda/MasterErrorDetector/cfg_lambda.json
         ```
+        > Note: You can see the details of each Lambda associated in the 
+        `cfg.json` files. Example:
+        ```json
+          ...
+          "lambda_functions": {
+            "ArmErrorDetector": {
+              "arn": "arn:aws:lambda:us-west-2:EXAMPLE_ACCT:function:ArmErrorDetector:mini",
+              "arn_qualifier": "mini"
+            }...
+        ```
     1. Download and prep the servo software used by the Greengrass Devices
         ```bash
         ./servo_setup.py
@@ -92,14 +103,16 @@
         ./group_setup.py create sort_arm ./arm/sort_arm/cfg.json --group-name sort_arm
         ./group_setup.py create inv_arm ./arm/inv_arm/cfg.json --group_name inv_arm
         ./group_setup.py create master ./master/cfg.json --group_name master
-        ./group_setup.py deploy ./sort_arm/cfg.json
-        ./group_setup.py deploy ./inv_arm/cfg.json
+        ./group_setup.py deploy ./arm/sort_arm/cfg.json
+        ./group_setup.py deploy ./arm/inv_arm/cfg.json
         ./group_setup.py deploy ./master/cfg.json
         ```
         > Note: the `--group-name` options above can be a name of your choosing
-1. Follow [these instructions](http://docs.aws.amazon.com/greengrass/latest/developerguide/what-is-gg.html) 
-   to install (but not provision or start) Greengrass on each host.
-1. Copy the directories from the developer local `aws-greengrass-mini-fulfillment` repository 
+1. Prep the Greengrass software
+    1. Go [here](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/software/greengrass) 
+       in the AWS console and download the `greengrass-linux-armv7` distribution
+    1. Perform the **Installing the AWS Greengrass Core** [step](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-tutorial-rpi.html#gg-tutorial-rpi-provision-ggc)
+1. Now copy the directories from the developer local `aws-greengrass-mini-fulfillment` repository 
    to each of the three Raspberry Pi hosts. Specifically,
     - `~/aws-greengrass-mini-fulfillment/groups/arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/arm`
     - `~/aws-greengrass-mini-fulfillment/groups/arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/arm`
@@ -112,6 +125,29 @@
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `cp_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
+    1. As described in the **Configure AWS Greengrass Core** [step](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-tutorial-rpi.html#gg-tutorial-rpi-connect), edit the 
+    configuration `/greengrass/config/config.json` as follows:
+        ```json
+        {
+           "coreThing": {
+               "caPath": "root-ca.pem",
+               "certPath": "master-core.pem",
+               "keyPath": "master-core.prv",
+               "thingArn": "arn:aws:iot:[AWS_REGION_HERE]:[AWS_ACCOUNT_ID]:thing/master-core",
+               "iotHost": "[HOST_PREFIX_HERE].iot.[AWS_REGION_HERE].amazonaws.com",
+               "ggHost": "greengrass.iot.[AWS_REGION_HERE].amazonaws.com",
+               "keepAlive": 600
+           },
+           "runtime": {
+               "cgroup": {
+                   "useSystemd": "yes"
+               }
+           }
+        }
+        ```
+        > Note: determine the `thingArn` from the `~/mini-fulfillment/groups/master/cfg.json` 
+        file on the host, determine the `iotHost` from the [Settings](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/settings)
+        in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. On the `sort_arm` host
     1. `cd ~/mini-fulfillment/groups/arm/`
     1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
@@ -119,6 +155,29 @@
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `./cp_sort_arm_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
+    1. As described in the **Configure AWS Greengrass Core** [step](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-tutorial-rpi.html#gg-tutorial-rpi-connect), edit the 
+    configuration `/greengrass/config/config.json` as follows:
+        ```json
+        {
+           "coreThing": {
+               "caPath": "root-ca.pem",
+               "certPath": "sort_arm-core.pem",
+               "keyPath": "sort_arm-core.prv",
+               "thingArn": "arn:aws:iot:[AWS_REGION_HERE]:[AWS_ACCOUNT_ID]:thing/sort_arm-core",
+               "iotHost": "[HOST_PREFIX_HERE].iot.[AWS_REGION_HERE].amazonaws.com",
+               "ggHost": "greengrass.iot.[AWS_REGION_HERE].amazonaws.com",
+               "keepAlive": 600
+           },
+           "runtime": {
+               "cgroup": {
+                   "useSystemd": "yes"
+               }
+           }
+        }
+        ```
+        > Note: determine the `thingArn` from the `~/mini-fulfillment/groups/arm/sort_arm/cfg.json` 
+        file on the host, determine the `iotHost` from the [Settings](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/settings) 
+        in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. On the `inv_arm` host
     1. `cd ~/mini-fulfillment/groups/arm/`
     1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
@@ -126,6 +185,29 @@
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `./cp_inv_arm_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
+    1. As described in the **Configure AWS Greengrass Core** [step](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-tutorial-rpi.html#gg-tutorial-rpi-connect), edit the 
+    configuration `/greengrass/config/config.json` as follows:
+        ```json
+        {
+           "coreThing": {
+               "caPath": "root-ca.pem",
+               "certPath": "inv_arm-core.pem",
+               "keyPath": "inv_arm-core.prv",
+               "thingArn": "arn:aws:iot:[AWS_REGION_HERE]:[AWS_ACCOUNT_ID]:thing/inv_arm-core",
+               "iotHost": "[HOST_PREFIX_HERE].iot.[AWS_REGION_HERE].amazonaws.com",
+               "ggHost": "greengrass.iot.[AWS_REGION_HERE].amazonaws.com",
+               "keepAlive": 600
+           },
+           "runtime": {
+               "cgroup": {
+                   "useSystemd": "yes"
+               }
+           }
+        }
+        ```
+        > Note: determine the `thingArn` from the `~/mini-fulfillment/groups/arm/inv_arm/cfg.json` 
+        file on the host and determine the `iotHost` from the [Settings](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/settings) 
+        in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. Using [the operation instructions](OPERATE.md) start the GG Cores and Devices in the following order:
     1. Start the `master` GG Core
     1. Start the `sort_arm` GG Core and the `sort_arm` GG Devices
