@@ -41,17 +41,18 @@ log.addHandler(handler)
 log.setLevel(logging.DEBUG)
 
 
-def heartbeat(config_file, root_ca, certificate, private_key, group_ca_dir,
+def heartbeat(device_name, config_file, root_ca, certificate, private_key, group_ca_dir,
               topic):
     # read the config file
     cfg = GroupConfigFile(config_file)
 
     # determine heartbeat device's thing name and orient MQTT client to GG Core
-    heartbeat_name = cfg['devices']['GGD_heartbeat']['thing_name']
+    heartbeat_name = cfg['devices'][device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
 
     # Discover Greengrass Core
     dip = DiscoveryInfoProvider()
-    dip.configureEndpoint(ggd_config.iot_endpoint)
+    dip.configureEndpoint(iot_endpoint)
     dip.configureCredentials(
         root_ca, certificate, private_key
     )
@@ -65,7 +66,7 @@ def heartbeat(config_file, root_ca, certificate, private_key, group_ca_dir,
         log.error(
             "Discovery failed for: {0} when connecting to "
             "service endpoint: {1}".format(
-                heartbeat_name, ggd_config.iot_endpoint
+                heartbeat_name, iot_endpoint
             ))
         return
 
@@ -113,6 +114,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Greengrass device that generates heartbeat messages',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The heartbeat's GGD device_name.")
     parser.add_argument('config_file',
                         help="The config file.")
     parser.add_argument('root_ca',
@@ -131,6 +134,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     heartbeat(
+        device_name=args.device_name,
         config_file=args.config_file, root_ca=args.root_ca,
         certificate=args.certificate, private_key=args.private_key,
         group_ca_dir=args.group_ca_dir, topic=args.topic

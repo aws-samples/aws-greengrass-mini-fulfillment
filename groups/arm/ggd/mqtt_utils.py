@@ -94,11 +94,14 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             print("Stopping...")
             break
         except BaseException as e:
-            print("Error in discovery!")
-            print("Error:{0}".format(e))
+            print("Error in discovery: {0}".format(e))
+            print("  exception args: {0} {0}".format(e.args))
+            print("  thing_name: {0}".format(thing_name))
+            print("  dip: {0}".format(discovery_info_provider))
+            print("  group_ca_path: {0}".format(group_ca_path))
             retry_count -= 1
-            print("{0} retries left\n".format(retry_count))
-            print("Backing off...\n")
+            print("  {0} retries left\n".format(retry_count))
+            print("  Backing off...\n")
             back_off_core.backOff()
 
     return discovered, group_ca, ca_list, core_list
