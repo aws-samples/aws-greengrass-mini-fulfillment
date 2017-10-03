@@ -2,24 +2,21 @@
 ### Preparation
 From your development machine open two command line terminals per host, for a 
 total of six. The following instructions assume you have open and connected:
-* `master-pi` terminal `01` and `02`
-* `sort_arm-pi` terminals `01` and `02`
-* `inv_arm-pi` terminals `01` and `02`
+* `master-pi` terminal
+* `sort_arm-pi` terminal
+* `inv_arm-pi` terminal
 
 ### To start device operations of the Master host `master-pi`
-**Start GG Core** -- in `master-pi` Terminal `01` execute:
-1. `cd /greengrass`
-1. `sudo ./greengrassd start`
-You should now see `syncmanager`, `connmanager`, `certmanager`, `spectre` or other 
-processes owned by `ggc_user` in the process list, by using the command `top -u ggc_user`.
-
-**Start GG Devices** -- in `master-pi` Terminal `02` execute:
-
-1. `cd ~/mini-fulfillment/groups/`
-1. `chmod 755 master/start_master.sh master/stop_master.sh`
-1. `./master/start_master.sh`
-
-**Note:** you should see the white button light turn on
+1. **Start GG Core** -- in the `master-pi` terminal execute:
+    1. `cd /greengrass/ggc/packages/<version>` 
+    1. Then run the command: `sudo ./greengrassd start`
+1. **Start GG Devices** -- in the `master-pi` terminal execute:
+    ```bash
+    cd ~/mini-fulfillment/groups/master
+    chmod 755 start_master.sh stop_master.sh
+    ./start_master.sh
+    ```
+    > **Note:** you should see the white button light turn on, if connected.
 
 After starting the master devices, to determine success you should see four 
 entries in the list of processes, similar to the following:
@@ -46,26 +43,26 @@ If the `belt` device started successfully you'll see `[btt.__init__] frequency:<
 in the output.
 
 ### To stop device operations of the Master host
-**Stop GG Devices** -- in a `master-pi` Terminal execute:
-1. `cd ~/mini-fulfillment/groups/master`
-1. `./stop_master.sh`
+1. **Stop GG Devices** -- in `master-pi` Terminal execute:
+    ```bash
+      cd ~/mini-fulfillment/groups/master
+      ./stop_master.sh
+    ```
 
 ### To start device operations of Arm host `sort_arm-pi`
-**Start GG Core** -- in Terminal `01` execute:
-1. `cd /greengrass`
-1. `sudo ./greengrassd start`
-You should now see `syncmanager`, `connmanager`, `certmanager`, `spectre` or other 
-processes owned by `ggc_user` in the process list, by using the command `top -u ggc_user`.
-
-**Start GG Devices** -- in Terminal `02` execute:
-
-1. `cd ~/mini-fulfillment/groups/arm`
-1. `chmod 755 arm/start_sort_arm.sh arm/stop_arm.sh`
-1. `./start_sort_arm.sh`
+1. **Start GG Core** -- in the `sort_arm-pi` Terminal execute:
+    1. `cd /greengrass`
+    1. `sudo ./greengrassd start`
+1. **Start GG Devices** in the `sort_arm-pi` Terminal execute:
+    ```bash
+    cd ~/mini-fulfillment/groups/arm
+    chmod 755 start_sort_arm.sh stop_arm.sh
+    ./start_sort_arm.sh
+    ```
 
 After starting the arm, to determine success you should see two entries in the 
 list of processes, similar to the following:
-```
+```bash
 $ screen -ls
 There are screens on:
 	4961.heartbeat	(19/11/16 18:10:51)	(Detached)
@@ -75,24 +72,22 @@ There are screens on:
 To view the output of any of the Greengrass Devices attach to the 
 `screen` by using the command `screen -r <pid>`. For example, the following command 
 attaches to the `arm` device process in the above list:
-```
+```bash
 screen -r 4958
 ```
 :warning: Remember to detach from the screen using `Ctrl-A, D` **not** `Ctrl-C`. 
 Using `Ctrl-C` will exit the process being viewed.
 
 ### To start device operations of Arm host `inv_arm-pi`
-**Start GG Core** -- in Terminal 01 execute:
-1. `cd /greengrass`
-1. `sudo ./greengrassd start`
-You should now see `syncmanager`, `connmanager`, `certmanager`, `spectre` or other 
-processes owned by `ggc_user` in the process list, by using the command `top -u ggc_user`.
-
-**Start GG Devices** -- in Terminal 02 execute:
-
-1. `cd ~/mini-fulfillment/groups/arm`
-1. `chmod 755 arm/start_inv_arm.sh arm/stop_arm.sh`
-1. `./start_inv_arm.sh`
+1. **Start GG Core** -- in the `inv_arm-pi` Terminal execute:
+    1. `cd /greengrass`
+    1. `sudo ./greengrassd start`
+1. **Start GG Devices** -- in the `inv_arm-pi` Terminal execute:
+    ```bash
+    cd ~/mini-fulfillment/groups/arm
+    chmod 755 arm/start_inv_arm.sh arm/stop_arm.sh
+    ./start_inv_arm.sh
+    ```
 
 After starting the arm, to determine success you should see two entries in the 
 list of processes, similar to the following:
@@ -112,10 +107,12 @@ screen -r 4958
 :warning: Remember to detach from the screen using `Ctrl-A, D` **not** `Ctrl-C`. 
 Using `Ctrl-C` will exit the process being viewed.
 
-### To stop device operations of an Arm host
+### To stop device operations of either Arm host
 **Stop GG Devices** -- in the Arm's terminal, execute:
-1. `cd ~/mini-fulfillment/groups/arm/`
-1. `./stop_arm.sh`
+```bash
+cd ~/mini-fulfillment/groups/arm/
+./stop_arm.sh
+```
 
 ### To start overall example operations
 Push the **`green`** button to start both robot arms and the conveyor belt.

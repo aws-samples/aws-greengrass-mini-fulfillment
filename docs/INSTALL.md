@@ -1,8 +1,7 @@
 
 # Installation Instructions
 1. Install OS (Jessie-Lite Sept) on three hosts.
-    - this demo has been built using Raspberry Pi 3 computers
-    > Note: Make sure Python 2.7.12+ is installed on the hosts
+    > **Note:** this demo has been built using Raspberry Pi 3 computers
 1. Configure the three hosts to be on the same network and note each host's IP  
 1. On each host make a `~/mini-fulfillment` directory
 1. Back on your development machine, execute the following steps.
@@ -30,7 +29,7 @@
         ./group_setup.py create-core --thing-name inv_arm-core --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm
         ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master/certs
         ```
-        > Note: You can see the details of each created Core recorded in the 
+        > **Note:** You can see the details of each created Core recorded in the 
         `cfg.json` files used above in the `create-core` command. Example: 
         ```json
         {
@@ -59,7 +58,7 @@
         ./group_setup.py create-devices --thing-names '[button_ggd,belt_ggd,bridge_ggd,heartbeat_ggd,web_ggd]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
         ./group_setup.py create-devices --thing-names '[inv_arm_ggd,sort_arm_ggd]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs --append
         ```
-        > Note: You can see the details of each create Device recorded in the 
+        > **Note:** You can see the details of each create Device recorded in the 
         `cfg.json` files used above in the `create-devices` command. Example:
         ```json
           ...
@@ -107,7 +106,7 @@
         ./group_setup.py deploy ./arm/inv_arm/cfg.json
         ./group_setup.py deploy ./master/cfg.json
         ```
-        > Note: the `--group-name` options above can be a name of your choosing
+        > **Note:** the `--group-name` options above can be a name of your choosing
 1. Prep the Greengrass software
     1. Go [here](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/software/greengrass) 
        in the AWS console and download the `greengrass-linux-armv7` distribution
@@ -145,7 +144,7 @@
            }
         }
         ```
-        > Note: determine the `thingArn` from the `~/mini-fulfillment/groups/master/cfg.json` 
+        > **Note:** determine the `thingArn` from the `~/mini-fulfillment/groups/master/cfg.json` 
         file on the host, determine the `iotHost` from the [Settings](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/settings)
         in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. On the `sort_arm` host
@@ -175,7 +174,7 @@
            }
         }
         ```
-        > Note: determine the `thingArn` from the `~/mini-fulfillment/groups/arm/sort_arm/cfg.json` 
+        > **Note:** determine the `thingArn` from the `~/mini-fulfillment/groups/arm/sort_arm/cfg.json` 
         file on the host, determine the `iotHost` from the [Settings](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/settings) 
         in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. On the `inv_arm` host
@@ -205,7 +204,7 @@
            }
         }
         ```
-        > Note: determine the `thingArn` from the `~/mini-fulfillment/groups/arm/inv_arm/cfg.json` 
+        > **Note:** determine the `thingArn` from the `~/mini-fulfillment/groups/arm/inv_arm/cfg.json` 
         file on the host and determine the `iotHost` from the [Settings](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/settings) 
         in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. Using [the operation instructions](OPERATE.md) start the GG Cores and Devices in the following order:
