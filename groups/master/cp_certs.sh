@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 
 echo "[begin] copying GGC certs"
-#echo "sudo cp certs/master-server.crt /greengrass/configuration/certs/server.crt"
-#sudo cp certs/master-server.crt /greengrass/configuration/certs/server.crt
-#echo "sudo cp certs/master-server-private.key /greengrass/configuration/certs/server.key"
-#sudo cp certs/master-server-private.key /greengrass/configuration/certs/server.key
-#TODO echo "sudo cp certs/cloud*.* /greengrass/configuration/certs"
-#TODO sudo cp certs/cloud*.* /greengrass/configuration/certs
-echo "sudo cp certs/root-ca.pem /greengrass/configuration/certs"
-sudo cp certs/root-ca.pem /greengrass/configuration/certs
+echo "sudo cp certs/master-core.pem /greengrass/certs"
+sudo cp certs/master-core.pem /greengrass/certs
+echo "sudo cp certs/master-core.prv /greengrass/certs"
+sudo cp certs/master-core.prv /greengrass/certs
+echo "sudo cp certs/root-ca.pem /greengrass/certs"
+sudo cp certs/root-ca.pem /greengrass/certs
 echo "[end] copying GGC certs"
