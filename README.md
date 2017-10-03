@@ -145,5 +145,6 @@ or questions you run into here as [Issues](https://github.com/awslabs/aws-greeng
 [Brett Francis](https://github.com/brettf) and [Todd Varland](https://github.com/toddvarland) would like to thank the following. Without their 
 help and existence we simply would not have made this demo.
 
-> **The Francis Family, The Varland Family, [ROBOTIS](https://github.com/ROBOTIS-GIT/DynamixelSDK), [Servode](https://github.com/brettf/servode), Pretty Lights, 
- Sigur Ros, Flume - Insanity, Amazon.com, HBO Silicon Valley, The [Greengrass](https://aws.amazon.com/greengrass/) Developers**
+> **The Francis Family, The Varland Family, [gg-group-setup](https://github.com/awslabs/aws-greengrass-group-setup), 
+[ROBOTIS](https://github.com/ROBOTIS-GIT/DynamixelSDK), [Servode](https://github.com/brettf/servode), 
+Pretty Lights, Sigur Ros, Flume - Insanity, Amazon.com, HBO Silicon Valley, The [Greengrass](https://aws.amazon.com/greengrass/) Developers**
