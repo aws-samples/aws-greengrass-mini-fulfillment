@@ -17,7 +17,7 @@ import traceback
 from AWSIoTPythonSDK.core.protocol.connection.cores import \
     ProgressiveBackOffCore
 from AWSIoTPythonSDK.exception.AWSIoTExceptions import \
-    DiscoveryInvalidRequestException
+    DiscoveryInvalidRequestException, DiscoveryFailure
 from AWSIoTPythonSDK.exception import operationTimeoutException
 
 
@@ -88,17 +88,25 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
 
             discovered = True
             break
+        except DiscoveryFailure as df:
+            print("Discovery request failed!")
+            print("Error:{0} type: {1}".format(df, str(type(df))))
+            print("       message: {0}".format(df.message))
+            back_off = True
         except DiscoveryInvalidRequestException as e:
             print("Invalid discovery request detected!")
             print("Error:{0}".format(e))
             print("Stopping...")
             break
         except BaseException as e:
-            print("Error in discovery: {0}".format(e))
-            print("  exception args: {0} {0}".format(e.args))
+            print("Error in discovery: {0} type: {1}".format(e, str(type(e))))
+            print("           message: {0}".format(e.message))
             print("  thing_name: {0}".format(thing_name))
             print("  dip: {0}".format(discovery_info_provider))
             print("  group_ca_path: {0}".format(group_ca_path))
+            back_off = True
+
+        if back_off:
             retry_count -= 1
             print("  {0} retries left\n".format(retry_count))
             print("  Backing off...\n")
