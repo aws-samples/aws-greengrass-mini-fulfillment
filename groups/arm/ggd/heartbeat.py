@@ -41,8 +41,8 @@ log.addHandler(handler)
 log.setLevel(logging.DEBUG)
 
 
-def heartbeat(device_name, config_file, root_ca, certificate, private_key, group_ca_dir,
-              topic):
+def heartbeat(device_name, config_file, root_ca, certificate, private_key,
+              group_ca_dir, topic):
     # read the config file
     cfg = GroupConfigFile(config_file)
 
@@ -54,10 +54,12 @@ def heartbeat(device_name, config_file, root_ca, certificate, private_key, group
     dip = DiscoveryInfoProvider()
     dip.configureEndpoint(iot_endpoint)
     dip.configureCredentials(
-        root_ca, certificate, private_key
+        caPath=root_ca, certPath=certificate, keyPath=private_key
     )
     dip.configureTimeout(10)  # 10 sec
-
+    log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
+        root_ca, certificate, private_key
+    ))
     discovered, group_ca, ca_list, core_list = ggc_discovery(
         heartbeat_name, dip, group_ca_dir, retry_count=10
     )
