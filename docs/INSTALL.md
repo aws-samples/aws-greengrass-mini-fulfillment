@@ -118,11 +118,12 @@
     - `~/aws-greengrass-mini-fulfillment/groups/master` to `master-pi$ ~/mini-fulfillment/groups/master`
 1. On the `master` host
     1. `cd ~/mini-fulfillment/groups/master/`
-    1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
-        > **Note** it can take some time to install `numpy`
+    1. `pip install -r requirements.txt`
+        > **Note** you might need to use `sudo` and it can take some time to 
+        install `numpy`
     1. `chmod 755 cp_certs.sh servo_build.sh start_master.sh stop_master.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
-    1. Execute `cp_certs.sh`. This will copy the host's certs into the 
+    1. Execute `./cp_certs.sh`. This will copy the host's certs into the 
        necessary GG Core location.
     1. As described in the **Configure AWS Greengrass Core** [step](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-tutorial-rpi.html#gg-tutorial-rpi-connect), edit the 
     configuration `/greengrass/config/config.json` as follows:
@@ -149,7 +150,8 @@
         in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. On the `sort_arm` host
     1. `cd ~/mini-fulfillment/groups/arm/`
-    1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
+    1. `pip install -r requirements.txt`
+        > **Note** you might need to use `sudo`
     1. `chmod 755 cp_sort_arm_certs.sh servo_build.sh start_sort_arm.sh stop_arm.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `./cp_sort_arm_certs.sh`. This will copy the host's certs into the 
@@ -179,7 +181,8 @@
         in the IoT Console, and the `ggHost` AWS region will be the same as in the `thingArn` value.
 1. On the `inv_arm` host
     1. `cd ~/mini-fulfillment/groups/arm/`
-    1. `pip install -r requirements.txt` - **Note** you might need to use `sudo`
+    1. `pip install -r requirements.txt` 
+        > **Note** you might need to use `sudo`
     1. `chmod 755 cp_inv_arm_certs.sh servo_build.sh start_inv_arm.sh stop_arm.sh`
     1. Make the Dynamixel SDK by executing `./servo_build.sh`
     1. Execute `./cp_inv_arm_certs.sh`. This will copy the host's certs into the 

@@ -8,12 +8,13 @@ total of six. The following instructions assume you have open and connected:
 
 ### To start device operations of the Master host `master-pi`
 1. **Start GG Core** -- in the `master-pi` terminal execute:
-    1. `cd /greengrass/ggc/packages/<version>` 
-    1. Then run the command: `sudo ./greengrassd start`
+    ```bash
+    cd /greengrass/ggc/packages/<version> 
+    sudo ./greengrassd start
+    ```
 1. **Start GG Devices** -- in the `master-pi` terminal execute:
     ```bash
     cd ~/mini-fulfillment/groups/master
-    chmod 755 start_master.sh stop_master.sh
     ./start_master.sh
     ```
     > **Note:** you should see the white button light turn on, if connected.
@@ -45,18 +46,19 @@ in the output.
 ### To stop device operations of the Master host
 1. **Stop GG Devices** -- in `master-pi` Terminal execute:
     ```bash
-      cd ~/mini-fulfillment/groups/master
-      ./stop_master.sh
+    cd ~/mini-fulfillment/groups/master
+    ./stop_master.sh
     ```
 
 ### To start device operations of Arm host `sort_arm-pi`
 1. **Start GG Core** -- in the `sort_arm-pi` Terminal execute:
-    1. `cd /greengrass`
-    1. `sudo ./greengrassd start`
+    ```bash
+    cd /greengrass/ggc/packages/<version> 
+    sudo ./greengrassd start
+    ```
 1. **Start GG Devices** in the `sort_arm-pi` Terminal execute:
     ```bash
     cd ~/mini-fulfillment/groups/arm
-    chmod 755 start_sort_arm.sh stop_arm.sh
     ./start_sort_arm.sh
     ```
 
@@ -80,12 +82,13 @@ Using `Ctrl-C` will exit the process being viewed.
 
 ### To start device operations of Arm host `inv_arm-pi`
 1. **Start GG Core** -- in the `inv_arm-pi` Terminal execute:
-    1. `cd /greengrass`
-    1. `sudo ./greengrassd start`
+    ```bash
+    cd /greengrass/ggc/packages/<version> 
+    sudo ./greengrassd start
+    ``` 
 1. **Start GG Devices** -- in the `inv_arm-pi` Terminal execute:
     ```bash
     cd ~/mini-fulfillment/groups/arm
-    chmod 755 arm/start_inv_arm.sh arm/stop_arm.sh
     ./start_inv_arm.sh
     ```
 
@@ -108,11 +111,11 @@ screen -r 4958
 Using `Ctrl-C` will exit the process being viewed.
 
 ### To stop device operations of either Arm host
-**Stop GG Devices** -- in the Arm's terminal, execute:
-```bash
-cd ~/mini-fulfillment/groups/arm/
-./stop_arm.sh
-```
+1. **Stop GG Devices** -- in the Arm's terminal, execute:
+    ```bash
+    cd ~/mini-fulfillment/groups/arm/
+    ./stop_arm.sh
+    ```
 
 ### To start overall example operations
 Push the **`green`** button to start both robot arms and the conveyor belt.
