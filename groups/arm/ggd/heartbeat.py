@@ -60,7 +60,7 @@ def heartbeat(device_name, config_file, root_ca, certificate, private_key,
     log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
         root_ca, certificate, private_key
     ))
-    discovered, group_ca, ca_list, core_list = ggc_discovery(
+    discovered, group_list, core_list, group_ca, ca_list = ggc_discovery(
         heartbeat_name, dip, group_ca_dir, retry_count=10
     )
 
@@ -71,6 +71,7 @@ def heartbeat(device_name, config_file, root_ca, certificate, private_key,
                 heartbeat_name, iot_endpoint
             ))
         return
+    log.info("Discovery success, core_list[0]:{0}".format(core_list[0]))
 
     # Greengrass Core discovered, now connect to Core from this GG Device
     mqttc = AWSIoTMQTTClient(heartbeat_name)

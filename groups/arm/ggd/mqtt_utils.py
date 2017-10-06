@@ -47,6 +47,7 @@ def mqtt_connect(mqtt_client, core_info):
         try:
             mqtt_client.connect()
             connected = True
+            break
         except socket.error as se:
             print("SE:{0}".format(se))
         except operationTimeoutException as te:
@@ -62,14 +63,17 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
                   retry_count=10):
     back_off_core = ProgressiveBackOffCore()
     discovered = False
+    group_list = None
     group_ca = None
     ca_list = None
     core_list = None
+
     while retry_count != 0:
         try:
             discovery_info = discovery_info_provider.discover(thing_name)
             ca_list = discovery_info.getAllCas()
             core_list = discovery_info.getAllCores()
+            group_list = discovery_info.getAllGroups()
 
             # Only pick the first CA and Core info (currently)
             group_id, ca = ca_list[0]
@@ -112,4 +116,4 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             print("  Backing off...\n")
             back_off_core.backOff()
 
-    return discovered, group_ca, ca_list, core_list
+    return discovered, group_list, core_list, group_ca, ca_list
