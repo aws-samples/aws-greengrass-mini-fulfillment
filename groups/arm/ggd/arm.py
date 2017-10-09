@@ -26,7 +26,11 @@ from requests import ConnectionError
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, AWSIoTMQTTShadowClient
 
 import ggd_config
-from mqtt_utils import mqtt_connect
+
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+from mqtt_utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
 from stages import ArmStages, NO_BOX_FOUND
@@ -75,7 +79,7 @@ should_loop = True
 mqttc = None
 mstr_shadow_client = None
 ggd_name = 'Empty'
-ggd_ca_file_path = "<invalid_cert>"
+# ggd_ca_file_path = "<invalid_cert>"
 master_shadow = None
 cmd_event = threading.Event()
 cmd_event.clear()
@@ -92,8 +96,40 @@ def shadow_mgr(payload, status, token):
         json.dumps(json.loads(payload), sort_keys=True), token))
 
 
-def initialize():
+def initialize(device_name, config_file, root_ca, certificate, private_key, group_ca_dir):
     global mqttc
+    global ggd_name
+
+    cfg = GroupConfigFile(config_file)
+
+    # determine heartbeat device's thing name and orient MQTT client to GG Core
+    ggd_name = cfg['devices'][device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
+
+    # Discover Greengrass Core
+    dip = DiscoveryInfoProvider()
+    dip.configureEndpoint(iot_endpoint)
+    dip.configureCredentials(
+        caPath=root_ca, certPath=certificate, keyPath=private_key
+    )
+    dip.configureTimeout(10)  # 10 sec
+    log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
+        root_ca, certificate, private_key
+    ))
+    discovered, group_list, core_list, group_ca, ca_list = ggc_discovery(
+        ggd_name, dip, group_ca_dir, retry_count=10
+    )
+
+    group_id = cfg['group']['id']
+    for group in group_list:
+        print("Discovered group core connectivity list: {0}".format(
+            group.coreConnectivityInfoList))
+        for cil in group.coreConnectivityInfoList:
+            print("  Core {0} has connectivity list".format(cil.coreThingArn, ))
+            for ci in cil.connectivityInfoList:
+                print("    Connection info: {0} {1} {2} {3}".format(
+                    ci.id, ci.host, ci.port, ci.metadata))
+
     mqttc = AWSIoTMQTTClient(ggd_name)
     mqttc.configureEndpoint(
         ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
@@ -413,10 +449,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Arm control and telemetry',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The arm's GGD device_name stored in config_file.")
     parser.add_argument('config_file',
                         help="The config file.")
-    parser.add_argument('ca_file_path',
-                        help="CA File Path of Server Certificate.")
+    parser.add_argument('root_ca',
+                        help="Root CA File Path of Server Certificate.")
+    parser.add_argument('certificate',
+                        help="File Path of GGD Certificate.")
+    parser.add_argument('private_key',
+                        help="File Path of GGD Private Key.")
+    parser.add_argument('group_ca_dir',
+                        help="The directory where the discovered Group CA will "
+                             "be saved.")
     parser.add_argument('--stage_topic', default='/arm/stages',
                         help="Topic used to communicate arm stage messages.")
     parser.add_argument('--telemetry_topic', default='/arm/telemetry',
@@ -431,11 +476,10 @@ if __name__ == "__main__":
         log.setLevel(logging.DEBUG)
         logging.getLogger('servode').setLevel(logging.DEBUG)
 
-    cfg = GroupConfigFile(args.config_file)
-    ggd_name = cfg['devices']['GGD_arm']['thing_name']
-    ggd_ca_file_path = args.ca_file_path
-
-    initialize()
+    initialize(
+        args.device_name, args.config_file, args.root_ca, args.certificate,
+        args.private_key, args.group_ca_dir
+    )
 
     with ServoProtocol() as sp:
         sg = ServoGroup()

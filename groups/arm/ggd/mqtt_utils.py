@@ -86,9 +86,8 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             group_ca = group_ca_path + '/' + group_id + "_CA.crt"
             if not os.path.exists(group_ca_path):
                 os.makedirs(group_ca_path)
-            group_ca_file = open(group_ca, "w")
-            group_ca_file.write(ca)
-            group_ca_file.close()
+            with open(group_ca, "w") as group_ca_file:
+                group_ca_file.write(ca)
 
             discovered = True
             break

@@ -38,7 +38,7 @@ formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
 handler.setFormatter(formatter)
 log.addHandler(handler)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
 
 def heartbeat(device_name, config_file, root_ca, certificate, private_key,
