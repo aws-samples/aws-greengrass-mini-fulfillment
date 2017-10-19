@@ -91,3 +91,5 @@ points. The arm's four main sections are in this image:
 
 ## The Conveyor
     <TBD>
+
+> Note: The conveyor used in this example was inspired by [this fine work](http://www.instructables.com/id/DIY-Conveyor-belt/).
