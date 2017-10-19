@@ -28,7 +28,7 @@ from gpiozero import PWMLED, Button
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
 import ggd_config
-from mqtt_utils import mqtt_connect
+from utils import mqtt_connect
 from ..group_config import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

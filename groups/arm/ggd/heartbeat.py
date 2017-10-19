@@ -26,7 +26,7 @@ import ggd_config
 from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
-from mqtt_utils import mqtt_connect, ggc_discovery
+from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

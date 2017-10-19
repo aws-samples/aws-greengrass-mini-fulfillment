@@ -30,7 +30,7 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
 from ..group_config import GroupConfigFile
 
 import ggd_config
-from mqtt_utils import mqtt_connect
+from utils import mqtt_connect
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

@@ -26,7 +26,7 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
 from .servo.servode import ServoProtocol, ServoGroup, Servo
 
 import ggd_config
-from mqtt_utils import mqtt_connect
+from utils import mqtt_connect
 from gg_group_setup import GroupConfigFile
 
 """

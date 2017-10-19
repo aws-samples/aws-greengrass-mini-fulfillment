@@ -30,7 +30,7 @@ import ggd_config
 from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
-from mqtt_utils import mqtt_connect, ggc_discovery
+from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
 from stages import ArmStages, NO_BOX_FOUND
