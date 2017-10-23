@@ -30,6 +30,7 @@ import ggd_config
 from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+import utils
 from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
@@ -77,9 +78,8 @@ commands = ['run', 'stop']
 should_loop = True
 
 mqttc = None
-mstr_shadow_client = None
+master_shadow_client = None
 ggd_name = 'Empty'
-# ggd_ca_file_path = "<invalid_cert>"
 master_shadow = None
 cmd_event = threading.Event()
 cmd_event.clear()
@@ -96,11 +96,14 @@ def shadow_mgr(payload, status, token):
         json.dumps(json.loads(payload), sort_keys=True), token))
 
 
-def initialize(device_name, config_file, root_ca, certificate, private_key, group_ca_dir):
+def initialize(device_name, config_file, root_ca, certificate, private_key,
+               group_ca_dir):
     global mqttc
     global ggd_name
 
     cfg = GroupConfigFile(config_file)
+    local_core = None
+    master_core = None
 
     # determine heartbeat device's thing name and orient MQTT client to GG Core
     ggd_name = cfg['devices'][device_name]['thing_name']
@@ -116,50 +119,44 @@ def initialize(device_name, config_file, root_ca, certificate, private_key, grou
     log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
         root_ca, certificate, private_key
     ))
-    discovered, group_list, core_list, group_ca, ca_list = ggc_discovery(
+    discovered, discovery_info, group_list = ggc_discovery(
         ggd_name, dip, group_ca_dir, retry_count=10
     )
 
-    group_id = cfg['group']['id']
+    log.info("[arm.initialize] found {0} groups for this device.".format(
+        len(group_list))
+    )
+    # find the arm Group's core.
     for group in group_list:
-        print("Discovered group core connectivity list: {0}".format(
-            group.coreConnectivityInfoList))
-        for cil in group.coreConnectivityInfoList:
-            print("  Core {0} has connectivity list".format(cil.coreThingArn, ))
-            for ci in cil.connectivityInfoList:
-                print("    Connection info: {0} {1} {2} {3}".format(
-                    ci.id, ci.host, ci.port, ci.metadata))
+        utils.dump_core_info_list(group.coreConnectivityInfoList)
+        local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
 
-    mqttc = AWSIoTMQTTClient(ggd_name)
-    mqttc.configureEndpoint(
-        ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
-    mqttc.configureCredentials(
-        CAFilePath=dir_path + "/" + ggd_ca_file_path,
-        KeyPath=dir_path + "/certs/GGD_arm.private.key",
-        CertificatePath=dir_path + "/certs/GGD_arm.certificate.pem.crt"
-    )
+        if local_core:
+            group_ca = group.caList()[0]
+            # Greengrass Core discovered, now connect to Core from this Device
+            mqttc = AWSIoTMQTTClient(ggd_name)
+            mqttc.configureCredentials(group_ca, private_key, certificate)
+            mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    global mstr_shadow_client
+            if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
+                raise EnvironmentError("connection to GG Core MQTT failed.")
+        else:
+            raise EnvironmentError("Couldn't find the local Core")
+
+    # m_core_info = utils.get_conn_info(core_list)
+    global master_shadow_client
     # get a shadow client to receive commands
-    mstr_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
-    mstr_shadow_client.configureEndpoint(
-        ggd_config.master_core_ip, ggd_config.master_core_port
-    )
-    mstr_shadow_client.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
-        KeyPath=dir_path + "/certs/GGD_arm.private.key",
-        CertificatePath=dir_path + "/certs/GGD_arm.certificate.pem.crt"
-    )
+    master_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
+    mqttc.configureCredentials(group_ca, private_key, certificate)
 
-    if not mqtt_connect(mqttc):
-        raise EnvironmentError("connection to GG Core MQTT failed.")
-    if not mqtt_connect(mstr_shadow_client):
+    if not mqtt_connect(mqtt_client=master_shadow_client,
+                        core_info=m_core_info):
         raise EnvironmentError("connection to Master Shadow failed.")
 
     global master_shadow
     # create and register the shadow handler on delta topics for commands
     # with a persistent connection to the Master shadow
-    master_shadow = mstr_shadow_client.createShadowHandlerWithName(
+    master_shadow = master_shadow_client.createShadowHandlerWithName(
         ggd_config.master_shadow_name, True)
 
     token = master_shadow.shadowGet(shadow_mgr, 5)
@@ -169,6 +166,8 @@ def initialize(device_name, config_file, root_ca, certificate, private_key, grou
         # TODO ensure Baud rate is maxed
         for servo_id in ggd_config.arm_servo_ids:
             sproto.ping(servo=servo_id)
+
+    return core_info, master_core_info
 
 
 def _stage_message(stage, text='', stage_result=None):
@@ -476,7 +475,7 @@ if __name__ == "__main__":
         log.setLevel(logging.DEBUG)
         logging.getLogger('servode').setLevel(logging.DEBUG)
 
-    initialize(
+    core_info, master_core_info = initialize(
         args.device_name, args.config_file, args.root_ca, args.certificate,
         args.private_key, args.group_ca_dir
     )

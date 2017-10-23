@@ -26,6 +26,7 @@ import ggd_config
 from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+import utils
 from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
@@ -78,7 +79,8 @@ def heartbeat(device_name, config_file, root_ca, certificate, private_key,
     mqttc.configureCredentials(group_ca, private_key, certificate)
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    core_info = core_list[0]
+    core_info = utils.get_local_core(core_list)
+
     if mqtt_connect(mqtt_client=mqttc, core_info=core_info):
         # MQTT client has connected to GG Core, start heartbeat messages
         try:
