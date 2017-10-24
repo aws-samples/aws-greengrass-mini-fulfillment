@@ -21,8 +21,6 @@ import argparse
 import datetime
 import logging
 
-import ggd_config
-
 from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
@@ -50,6 +48,8 @@ def heartbeat(device_name, config_file, root_ca, certificate, private_key,
     # determine heartbeat device's thing name and orient MQTT client to GG Core
     heartbeat_name = cfg['devices'][device_name]['thing_name']
     iot_endpoint = cfg['misc']['iot_endpoint']
+    local_core = None
+    group_ca = None
 
     # Discover Greengrass Core
     dip = DiscoveryInfoProvider()
@@ -58,61 +58,69 @@ def heartbeat(device_name, config_file, root_ca, certificate, private_key,
         caPath=root_ca, certPath=certificate, keyPath=private_key
     )
     dip.configureTimeout(10)  # 10 sec
-    log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
+    log.info("[hb] Discovery using CA: {0} cert: {1} prv_key: {2}".format(
         root_ca, certificate, private_key
     ))
-    discovered, group_list, core_list, group_ca, ca_list = ggc_discovery(
+    discovered, discovery_info, group_list, group_ca_file = ggc_discovery(
         heartbeat_name, dip, group_ca_dir, retry_count=10
     )
 
     if discovered is False:
         log.error(
-            "Discovery failed for: {0} when connecting to "
+            "[hb] Discovery failed for: {0} when connecting to "
             "service endpoint: {1}".format(
                 heartbeat_name, iot_endpoint
             ))
         return
-    log.info("Discovery success, core_list[0]:{0}".format(core_list[0]))
+    log.info("[hb] Discovery success")
 
-    # Greengrass Core discovered, now connect to Core from this GG Device
     mqttc = AWSIoTMQTTClient(heartbeat_name)
-    mqttc.configureCredentials(group_ca, private_key, certificate)
+
+    # find this device Group's core
+    for group in group_list:
+        utils.dump_core_info_list(group.coreConnectivityInfoList)
+        local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
+        if local_core:
+            log.info('[hb] Found the local core and Group CA.')
+            break
+
+    if not local_core:
+        raise EnvironmentError("[hb] Couldn't find the local Core")
+
+    # local Greengrass Core discovered, now connect to Core from this Device
+    log.info("[hb] gca_file:{0} cert:{1}".format(group_ca_file, certificate))
+    mqttc.configureCredentials(group_ca_file, private_key, certificate)
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    core_info = utils.get_local_core(core_list)
+    if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
+        raise EnvironmentError("[hb] Connection to GG Core MQTT failed.")
 
-    if mqtt_connect(mqtt_client=mqttc, core_info=core_info):
-        # MQTT client has connected to GG Core, start heartbeat messages
-        try:
-            start = datetime.datetime.now()
-            hostname = socket.gethostname()
-            while True:
-                now = datetime.datetime.now()
-                msg = {
-                    "version": "2017-07-05",  # YYYY-MM-DD
-                    "ggd_id": heartbeat_name,
-                    "hostname": hostname,
-                    "data": [
-                        {
-                            "sensor_id": "heartbeat",
-                            "ts": now.isoformat(),
-                            "duration": str(now - start)
-                        }
-                    ]
-                }
-                print("[hb] publishing heartbeat msg: {0}".format(msg))
-                mqttc.publish(topic, json.dumps(msg), 0)
-                time.sleep(random.random() * 10)
+    # MQTT client has connected to GG Core, start heartbeat messages
+    try:
+        start = datetime.datetime.now()
+        hostname = socket.gethostname()
+        while True:
+            now = datetime.datetime.now()
+            msg = {
+                "version": "2017-07-05",  # YYYY-MM-DD
+                "ggd_id": heartbeat_name,
+                "hostname": hostname,
+                "data": [
+                    {
+                        "sensor_id": "heartbeat",
+                        "ts": now.isoformat(),
+                        "duration": str(now - start)
+                    }
+                ]
+            }
+            print("[hb] publishing heartbeat msg: {0}".format(msg))
+            mqttc.publish(topic, json.dumps(msg), 0)
+            time.sleep(random.random() * 10)
 
-        except KeyboardInterrupt:
-            log.info(
-                "[hb] KeyboardInterrupt ... exiting heartbeat")
-        mqttc.disconnect()
-        time.sleep(2)
-    else:
-        print("[hb] could not connect successfully to: {0} via mqtt.".format(
-            core_info
-        ))
+    except KeyboardInterrupt:
+        log.info("[hb] KeyboardInterrupt ... exiting heartbeat")
+    mqttc.disconnect()
+    time.sleep(2)
 
 
 if __name__ == '__main__':

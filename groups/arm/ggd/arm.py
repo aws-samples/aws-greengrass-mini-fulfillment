@@ -119,7 +119,7 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
     log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
         root_ca, certificate, private_key
     ))
-    discovered, discovery_info, group_list = ggc_discovery(
+    discovered, discovery_info, group_list, group_ca_file = ggc_discovery(
         ggd_name, dip, group_ca_dir, retry_count=10
     )
 
@@ -132,16 +132,20 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
         local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
 
         if local_core:
-            group_ca = group.caList()[0]
-            # Greengrass Core discovered, now connect to Core from this Device
-            mqttc = AWSIoTMQTTClient(ggd_name)
-            mqttc.configureCredentials(group_ca, private_key, certificate)
-            mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+            log.info('[arm..initialize] Found the local core and Group CA.')
+            break
 
-            if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
-                raise EnvironmentError("connection to GG Core MQTT failed.")
-        else:
-            raise EnvironmentError("Couldn't find the local Core")
+    if not local_core:
+        raise EnvironmentError("Couldn't find the local Core")
+
+    # Greengrass Core discovered, now connect to Core from this Device
+    log.info("[arm.initialize] gca_file:{0} cert:{1}".format(
+        group_ca_file, certificate))
+    mqttc.configureCredentials(group_ca_file, private_key, certificate)
+    mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+
+    if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
+        raise EnvironmentError("Connection to GG Core MQTT failed.")
 
     # m_core_info = utils.get_conn_info(core_list)
     global master_shadow_client
@@ -151,7 +155,7 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
 
     if not mqtt_connect(mqtt_client=master_shadow_client,
                         core_info=m_core_info):
-        raise EnvironmentError("connection to Master Shadow failed.")
+        raise EnvironmentError("Connection to Master Shadow failed.")
 
     global master_shadow
     # create and register the shadow handler on delta topics for commands

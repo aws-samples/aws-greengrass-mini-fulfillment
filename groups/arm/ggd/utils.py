@@ -12,6 +12,7 @@
 
 import os
 import socket
+import logging
 import traceback
 
 from AWSIoTPythonSDK.core.protocol.connection.cores import \
@@ -26,7 +27,8 @@ def mqtt_connect(mqtt_client, core_info):
     for connectivity_info in core_info.connectivityInfoList:
         core_host = connectivity_info.host
         core_port = connectivity_info.port
-        print("Connecting to Core at {0}:{1}".format(core_host, core_port))
+        logging.info("Connecting to Core at {0}:{1}".format(
+            core_host, core_port))
         mqtt_client.configureEndpoint(core_host, core_port)
         try:
             mqtt_client.connect()
@@ -49,6 +51,7 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
     discovered = False
     discovery_info = None
     group_list = None
+    group_ca_file = None
 
     while retry_count != 0:
         try:
@@ -58,13 +61,13 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             group_list = discovery_info.getAllGroups()
 
             # TODO upgrade logic to support multiple discovered groups
-            if len(group_list) > 0:
-                raise DiscoveryFailure("Discovery of more groups than expected")
+            if len(group_list) > 1:
+                raise DiscoveryFailure("Discovered more groups than expected")
 
             # Only pick and save the first CA and Core info (currently)
             group_id, ca = ca_list[0]
             core_info = core_list[0]
-            print("Discovered Greengrass Core: {0} from Group: {1}".format(
+            logging.info("Discovered Greengrass Core:{0} from Group:{1}".format(
                 core_info.coreThingArn, group_id)
             )
 
@@ -72,39 +75,41 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             discovered = True
             break
         except DiscoveryFailure as df:
-            print("Discovery request failed!")
-            print("Error:{0} type: {1}".format(df, str(type(df))))
-            print("       message: {0}".format(df.message))
+            logging.error(
+                "Discovery failed! Error:{0} type:{1} message:{2}".format(
+                    df, str(type(df)), df.message)
+            )
             back_off = True
         except DiscoveryInvalidRequestException as e:
-            print("Invalid discovery request detected!")
-            print("Error:{0}".format(e))
-            print("Stopping...")
+            logging.error("Invalid discovery request! Error:{0}".format(e))
+            logging.error("Stopping discovery...")
             break
         except BaseException as e:
-            print("Error in discovery: {0} type: {1}".format(e, str(type(e))))
-            print("           message: {0}".format(e.message))
-            print("  thing_name: {0}".format(thing_name))
-            print("  dip: {0}".format(discovery_info_provider))
-            print("  group_ca_path: {0}".format(group_ca_path))
+            logging.error(
+                "Error in discovery:{0} type:{1} message:{2} thing_name:{3}"
+                "dip:{4} group_ca_path:{5}".format(
+                    e, str(type(e)), e.message, thing_name,
+                    discovery_info_provider, group_ca_path)
+            )
             back_off = True
 
         if back_off:
             retry_count -= 1
-            print("  {0} retries left\n".format(retry_count))
-            print("  Backing off...\n")
+            logging.info("{0} retries left\n".format(retry_count))
+            logging.debug("Backing off...\n")
             back_off_core.backOff()
 
-    return discovered, discovery_info, group_list
+    return discovered, discovery_info, group_list, group_ca_file
 
 
 def save_group_ca(group_ca, group_ca_path, group_id):
-    print("Persist the Core connectivity identity Group CA info...")
+    logging.info("Saving the Group CA file...")
     group_ca_file = group_ca_path + '/' + group_id + "_CA.crt"
     if not os.path.exists(group_ca_path):
         os.makedirs(group_ca_path)
     with open(group_ca_file, "w") as crt:
-        group_ca_file.write(crt)
+        crt.write(group_ca)
+    logging.info('Saved group CA file:{0}'.format(group_ca_file))
 
     return group_ca_file
 
