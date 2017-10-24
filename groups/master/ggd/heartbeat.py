@@ -21,13 +21,15 @@ import argparse
 import datetime
 import logging
 
-import ggd_config
-
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
-from utils import mqtt_connect
+import utils
+from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+heartbeat_topic = '/heart/beat'
 
 log = logging.getLogger('heartbeat')
 handler = logging.StreamHandler()
@@ -35,72 +37,118 @@ formatter = logging.Formatter(
     '%(asctime)s|%(name)-8s|%(levelname)s: %(message)s')
 handler.setFormatter(formatter)
 log.addHandler(handler)
-log.setLevel(logging.DEBUG)
-
-ggd_ca_file_path = "<invalid_cert>"
+log.setLevel(logging.INFO)
 
 
-def heartbeat(config_file, topic, frequency=3):
+def heartbeat(device_name, config_file, root_ca, certificate, private_key,
+              group_ca_dir, topic):
     # read the config file
     cfg = GroupConfigFile(config_file)
 
     # determine heartbeat device's thing name and orient MQTT client to GG Core
-    heartbeat_name = cfg['devices']['GGD_heartbeat']['thing_name']
-    mqttc = AWSIoTMQTTClient(heartbeat_name)
-    mqttc.configureEndpoint(
-        ggd_config.master_core_ip, ggd_config.master_core_port
+    heartbeat_name = cfg['devices'][device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
+    local_core = None
+    group_ca = None
+
+    # Discover Greengrass Core
+    dip = DiscoveryInfoProvider()
+    dip.configureEndpoint(iot_endpoint)
+    dip.configureCredentials(
+        caPath=root_ca, certPath=certificate, keyPath=private_key
     )
-    mqttc.configureCredentials(
-        CAFilePath=dir_path + "/" + ggd_ca_file_path,
-        KeyPath=dir_path + "/certs/GGD_heartbeat.private.key",
-        CertificatePath=dir_path + "/certs/GGD_heartbeat.certificate.pem.crt"
+    dip.configureTimeout(10)  # 10 sec
+    log.info("[hb] Discovery using CA: {0} cert: {1} prv_key: {2}".format(
+        root_ca, certificate, private_key
+    ))
+    discovered, discovery_info, group_list, group_ca_file = ggc_discovery(
+        heartbeat_name, dip, group_ca_dir, retry_count=10
     )
 
+    if discovered is False:
+        log.error(
+            "[hb] Discovery failed for: {0} when connecting to "
+            "service endpoint: {1}".format(
+                heartbeat_name, iot_endpoint
+            ))
+        return
+    log.info("[hb] Discovery success")
+
+    mqttc = AWSIoTMQTTClient(heartbeat_name)
+
+    # find this device Group's core
+    for group in group_list:
+        utils.dump_core_info_list(group.coreConnectivityInfoList)
+        local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
+        if local_core:
+            log.info('[hb] Found the local core and Group CA.')
+            break
+
+    if not local_core:
+        raise EnvironmentError("[hb] Couldn't find the local Core")
+
+    # local Greengrass Core discovered, now connect to Core from this Device
+    log.info("[hb] gca_file:{0} cert:{1}".format(group_ca_file, certificate))
+    mqttc.configureCredentials(group_ca_file, private_key, certificate)
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    if mqtt_connect(mqttc):
-        # MQTT client has connected to GG Core, start heartbeat messages
-        try:
-            start = datetime.datetime.now()
-            while True:
-                hostname = socket.gethostname()
+    if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
+        raise EnvironmentError("[hb] Connection to GG Core MQTT failed.")
 
-                now = datetime.datetime.now()
-                msg = {
-                    "version": "2017-07-05",  # YYYY-MM-DD
-                    "ggd_id": heartbeat_name,
-                    "hostname": hostname,
-                    "data": [
-                        {
-                            "sensor_id": "heartbeat",
-                            "ts": now.isoformat(),
-                            "duration": str(now - start)
-                        }
-                    ]
-                }
-                print("[hb] publishing heartbeat msg: {0}".format(msg))
-                mqttc.publish(topic, json.dumps(msg), 0)
-                time.sleep(random.random() * 10)
+    # MQTT client has connected to GG Core, start heartbeat messages
+    try:
+        start = datetime.datetime.now()
+        hostname = socket.gethostname()
+        while True:
+            now = datetime.datetime.now()
+            msg = {
+                "version": "2017-07-05",  # YYYY-MM-DD
+                "ggd_id": heartbeat_name,
+                "hostname": hostname,
+                "data": [
+                    {
+                        "sensor_id": "heartbeat",
+                        "ts": now.isoformat(),
+                        "duration": str(now - start)
+                    }
+                ]
+            }
+            print("[hb] publishing heartbeat msg: {0}".format(msg))
+            mqttc.publish(topic, json.dumps(msg), 0)
+            time.sleep(random.random() * 10)
 
-        except KeyboardInterrupt:
-            log.info(
-                "[__main__] KeyboardInterrupt ... exiting heartbeat")
-        mqttc.disconnect()
-        time.sleep(2)
-    else:
-        print("[hb] could not connect successfully via mqtt.")
+    except KeyboardInterrupt:
+        log.info("[hb] KeyboardInterrupt ... exiting heartbeat")
+    mqttc.disconnect()
+    time.sleep(2)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Greengrass device that generates heartbeat messages',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The heartbeat's GGD device_name.")
     parser.add_argument('config_file',
                         help="The config file.")
-    parser.add_argument('ca_file_path',
-                        help="CA File Path of Server Certificate.")
-    parser.add_argument('--topic', default='/heart/beat',
-                        help="Topic used to communicate arm telemetry.")
+    parser.add_argument('root_ca',
+                        help="Root CA File Path of Server Certificate.")
+    parser.add_argument('certificate',
+                        help="File Path of GGD Certificate.")
+    parser.add_argument('private_key',
+                        help="File Path of GGD Private Key.")
+    parser.add_argument('group_ca_dir',
+                        help="The directory where the discovered Group CA will "
+                             "be saved.")
+    parser.add_argument('--topic', default=heartbeat_topic,
+                        help="Topic used to communicate heartbeat telemetry.")
+    parser.add_argument('--frequency', default=3,
+                        help="Frequency in seconds to send heartbeat messages.")
 
     args = parser.parse_args()
-    ggd_ca_file_path = args.ca_file_path
-    heartbeat(config_file=args.config_file, topic=args.topic)
+    heartbeat(
+        device_name=args.device_name,
+        config_file=args.config_file, root_ca=args.root_ca,
+        certificate=args.certificate, private_key=args.private_key,
+        group_ca_dir=args.group_ca_dir, topic=args.topic
+    )
