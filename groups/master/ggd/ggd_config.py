@@ -20,8 +20,6 @@
 # # inv_arm_ip = "10.0.1.42"
 # inv_arm_port = 8883
 
-iot_endpoint = 'examplexxxxxx.iot.us-west-2.amazonaws.com'
-master_shadow_name = "MasterBrain"
 
 convey_topics = [
     "/convey/telemetry",
