@@ -24,6 +24,8 @@ from AWSIoTPythonSDK.exception import operationTimeoutException
 
 def mqtt_connect(mqtt_client, core_info):
     connected = False
+
+    # try connecting to all connectivity info objects in the list
     for connectivity_info in core_info.connectivityInfoList:
         core_host = connectivity_info.host
         core_port = connectivity_info.port
@@ -86,7 +88,7 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             break
         except BaseException as e:
             logging.error(
-                "Error in discovery:{0} type:{1} message:{2} thing_name:{3}"
+                "Error in discovery:{0} type:{1} message:{2} thing_name:{3} "
                 "dip:{4} group_ca_path:{5}".format(
                     e, str(type(e)), e.message, thing_name,
                     discovery_info_provider, group_ca_path)

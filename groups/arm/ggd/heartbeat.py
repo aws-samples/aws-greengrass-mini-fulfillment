@@ -28,6 +28,17 @@ import utils
 from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
+"""
+Greengrass Heartbeat device
+
+This Greengrass device simply provides a stream of heartbeat messages. These 
+messages can be useful when debugging the overall IoT solution as they are the 
+simplest messages being sent, on the simplest path.
+
+This device expects to be launched form a command line. To learn more about that 
+command line type: `python heartbeat.py --help`
+"""
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 heartbeat_topic = '/heart/beat'
 
@@ -40,8 +51,8 @@ log.addHandler(handler)
 log.setLevel(logging.INFO)
 
 
-def heartbeat(device_name, config_file, root_ca, certificate, private_key,
-              group_ca_dir, topic):
+def core_connect(device_name, config_file, root_ca, certificate, private_key,
+                 group_ca_dir):
     # read the config file
     cfg = GroupConfigFile(config_file)
 
@@ -95,6 +106,10 @@ def heartbeat(device_name, config_file, root_ca, certificate, private_key,
     if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
         raise EnvironmentError("[hb] Connection to GG Core MQTT failed.")
 
+    return mqttc, heartbeat_name
+
+
+def heartbeat(mqttc, heartbeat_name, topic):
     # MQTT client has connected to GG Core, start heartbeat messages
     try:
         start = datetime.datetime.now()
@@ -132,7 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('config_file',
                         help="The config file.")
     parser.add_argument('root_ca',
-                        help="Root CA File Path of Server Certificate.")
+                        help="Root CA File Path of Cloud Server Certificate.")
     parser.add_argument('certificate',
                         help="File Path of GGD Certificate.")
     parser.add_argument('private_key',
@@ -146,9 +161,14 @@ if __name__ == '__main__':
                         help="Frequency in seconds to send heartbeat messages.")
 
     args = parser.parse_args()
-    heartbeat(
+
+    mqtt_client, hb_name = core_connect(
         device_name=args.device_name,
         config_file=args.config_file, root_ca=args.root_ca,
         certificate=args.certificate, private_key=args.private_key,
-        group_ca_dir=args.group_ca_dir, topic=args.topic
+        group_ca_dir=args.group_ca_dir
+    )
+    heartbeat(
+        mqttc=mqtt_client, heartbeat_name=hb_name,
+        topic=args.topic
     )
