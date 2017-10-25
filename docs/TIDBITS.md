@@ -24,13 +24,19 @@ Execute the command: `sudo apt-get install screen`
 Then to run screen with a bash shell: `screen bash`
 
 ### Install Dependencies
-```
+```bash
 sudo apt-get install python-devel
 ```
 ..and then using `pip` install:
-```
+```bash
 sudo pip install -r requirements.txt
 ```
 
 ### Physical Setup
 The conveyor should be 14" away from the arm base. 
+
+### Checking Servode comms on a Host
+```bash
+cd ~/mini-fulfillment/groups/arm/ggd
+python -m servo.servode ping [servo_id]
+```
