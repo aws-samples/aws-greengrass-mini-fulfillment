@@ -69,7 +69,7 @@ def discover_cores(cfg, dip, device_name, group_ca_dir):
         dump_core_info_list(group.coreConnectivityInfoList)
         gg_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
         if gg_core:
-            logging.info('[hb] Found the local core and Group CA.')
+            logging.info('Found the local core and Group CA.')
             break
     return gg_core, group_ca_file
 

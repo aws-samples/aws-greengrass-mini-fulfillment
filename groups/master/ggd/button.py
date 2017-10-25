@@ -26,7 +26,7 @@ import logging
 
 from gpiozero import PWMLED, Button
 
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
 from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 import utils
@@ -52,6 +52,7 @@ red_button = Button(6)
 white_led = PWMLED(27)
 white_button = Button(13)
 mqttc = None
+ggd_name = None
 
 
 def button(sensor_id, toggle):
@@ -162,7 +163,7 @@ def button_white(cli):
 
 def core_connect(device_name, config_file, root_ca, certificate, private_key,
                  group_ca_dir):
-    global ggd_name
+    global ggd_name, mqttc
     cfg = GroupConfigFile(config_file)
     ggd_name = cfg['devices'][device_name]['thing_name']
     iot_endpoint = cfg['misc']['iot_endpoint']
@@ -173,7 +174,7 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
         caPath=root_ca, certPath=certificate, keyPath=private_key
     )
     dip.configureTimeout(10)  # 10 sec
-    logging.info("[belt] Discovery using CA: {0} cert: {1} prv_key: {2}".format(
+    logging.info("[button] Discovery using CA:{0} cert:{1} prv_key:{2}".format(
         root_ca, certificate, private_key
     ))
     gg_core, group_ca_file = utils.discover_cores(
@@ -181,6 +182,13 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
     )
     if not gg_core:
         raise EnvironmentError("[belt] Couldn't find the Core")
+
+    mqttc = AWSIoTMQTTClient(ggd_name)
+    # local Greengrass Core discovered, now connect to Core from this Device
+    log.info("[button] gca_file:{0} cert:{1}".format(
+        group_ca_file, certificate))
+    mqttc.configureCredentials(group_ca_file, private_key, certificate)
+    mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
     return mqttc, gg_core
 
@@ -242,14 +250,14 @@ if __name__ == '__main__':
 
     pa = parser.parse_args()
 
-    mqttc, core = core_connect(
+    client, core = core_connect(
         device_name=pa.device_name,
         config_file=pa.config_file, root_ca=pa.root_ca,
         certificate=pa.certificate, private_key=pa.private_key,
         group_ca_dir=pa.group_ca_dir
     )
 
-    if utils.mqtt_connect(mqtt_client=mqttc, core_info=core):
+    if utils.mqtt_connect(mqtt_client=client, core_info=core):
         pa.func(pa)
 
     time.sleep(0.5)

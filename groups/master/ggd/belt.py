@@ -333,7 +333,7 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
         caPath=root_ca, certPath=certificate, keyPath=private_key
     )
     dip.configureTimeout(10)  # 10 sec
-    logging.info("[belt] Discovery using CA: {0} cert: {1} prv_key: {2}".format(
+    logging.info("[belt] Discovery using CA:{0} cert:{1} prv_key:{2}".format(
         root_ca, certificate, private_key
     ))
     gg_core, group_ca_file = utils.discover_cores(
