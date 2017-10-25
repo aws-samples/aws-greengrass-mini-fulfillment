@@ -24,6 +24,8 @@ from AWSIoTPythonSDK.exception import operationTimeoutException
 
 def mqtt_connect(mqtt_client, core_info):
     connected = False
+
+    # try connecting to all connectivity info objects in the list
     for connectivity_info in core_info.connectivityInfoList:
         core_host = connectivity_info.host
         core_port = connectivity_info.port
@@ -43,6 +45,33 @@ def mqtt_connect(mqtt_client, core_info):
             print("Exception caught:{0}".format(e.message))
 
     return connected
+
+
+def discover_cores(cfg, dip, device_name, group_ca_dir):
+    gg_core = None
+    # Discover Greengrass Core
+
+    discovered, discovery_info, group_list, group_ca_file = ggc_discovery(
+        device_name, dip, group_ca_dir, retry_count=10
+    )
+    if discovered is False:
+        error = "Discovery failed for:{0} connecting to endpoint".format(
+                    device_name
+        )
+        logging.error(error)
+        raise DiscoveryFailure(error)
+
+    logging.info("Device: {0} discovery success".format(device_name))
+
+    # TODO upgrade logic to support multiple discovered groups
+    # find this device Group's core
+    for group in group_list:
+        dump_core_info_list(group.coreConnectivityInfoList)
+        gg_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
+        if gg_core:
+            logging.info('[hb] Found the local core and Group CA.')
+            break
+    return gg_core, group_ca_file
 
 
 def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
@@ -86,7 +115,7 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             break
         except BaseException as e:
             logging.error(
-                "Error in discovery:{0} type:{1} message:{2} thing_name:{3}"
+                "Error in discovery:{0} type:{1} message:{2} thing_name:{3} "
                 "dip:{4} group_ca_path:{5}".format(
                     e, str(type(e)), e.message, thing_name,
                     discovery_info_provider, group_ca_path)

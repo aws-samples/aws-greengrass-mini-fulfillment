@@ -22,14 +22,12 @@ import collections
 import logging
 
 from cachetools import TTLCache
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
 from .servo.servode import ServoProtocol, ServoGroup, Servo
 
 from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+from AWSIoTPythonSDK.MQTTLib import DROP_OLDEST, AWSIoTMQTTShadowClient
 import utils
-from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
 """
@@ -74,9 +72,7 @@ bone_servo_cache = TTLCache(maxsize=32, ttl=120)
 should_loop = True
 cmd_event = threading.Event()
 cmd_event.clear()
-# cfg = None
 ggd_name = 'Empty'
-# master_shadow = None
 
 
 def shadow_mgr(payload, status, token):
@@ -327,48 +323,26 @@ class BeltTelemetryThread(threading.Thread):
 def core_connect(device_name, config_file, root_ca, certificate, private_key,
                  group_ca_dir):
     global ggd_name
-    cfg = GroupConfigFile(args.config_file)
+    cfg = GroupConfigFile(config_file)
     ggd_name = cfg['devices'][device_name]['thing_name']
     iot_endpoint = cfg['misc']['iot_endpoint']
-    gg_core = None
-    group_ca = None
 
-    # Discover Greengrass Core
     dip = DiscoveryInfoProvider()
     dip.configureEndpoint(iot_endpoint)
     dip.configureCredentials(
         caPath=root_ca, certPath=certificate, keyPath=private_key
     )
     dip.configureTimeout(10)  # 10 sec
-    log.info("[belt] Discovery using CA: {0} cert: {1} prv_key: {2}".format(
+    logging.info("[belt] Discovery using CA: {0} cert: {1} prv_key: {2}".format(
         root_ca, certificate, private_key
     ))
-    discovered, discovery_info, group_list, group_ca_file = ggc_discovery(
-        ggd_name, dip, group_ca_dir, retry_count=10
+    gg_core, group_ca_file = utils.discover_cores(
+        cfg=cfg, dip=dip, device_name=ggd_name, group_ca_dir=group_ca_dir
     )
-
-    if discovered is False:
-        log.error(
-            "[belt] Discovery failed for: {0} when connecting to "
-            "service endpoint: {1}".format(
-                ggd_name, iot_endpoint
-            ))
-        return
-    log.info("[belt] Discovery success")
-
-    # find this device Group's core
-    for group in group_list:
-        utils.dump_core_info_list(group.coreConnectivityInfoList)
-        gg_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
-        if gg_core:
-            log.info('[hb] Found the local core and Group CA.')
-            break
-
     if not gg_core:
-        raise EnvironmentError("[hb] Couldn't find the local Core")
+        raise EnvironmentError("[belt] Couldn't find the Core")
 
     # local Greengrass Core discovered
-
     # get a shadow client to receive commands
     mqttsc = AWSIoTMQTTShadowClient(ggd_name)
 
@@ -378,7 +352,7 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
 
     mqttc = mqttsc.getMQTTConnection()
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
-    if not mqtt_connect(mqttc, gg_core):
+    if not utils.mqtt_connect(mqttsc, gg_core):
         raise EnvironmentError("connection to Master Shadow failed.")
 
     # create and register the shadow handler on delta topics for commands
@@ -435,7 +409,7 @@ if __name__ == "__main__":
         description='Conveyor Belt control and telemetry',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('device_name',
-                        help="The belt's GGD device_name.")
+                        help="The GGD device_name in the config file.")
     parser.add_argument('config_file',
                         help="The config file.")
     parser.add_argument('root_ca',
@@ -447,7 +421,7 @@ if __name__ == "__main__":
     parser.add_argument('group_ca_dir',
                         help="The directory where the discovered Group CA will "
                              "be saved.")
-    parser.add_argument('--control_frequency', default=0.1,
+    parser.add_argument('--control_frequency', default=0.5,
                         dest='control_frequency', type=float,
                         help="Modify the default control frequency.")
     parser.add_argument('--telemetry_frequency', default=1.0,
@@ -458,15 +432,15 @@ if __name__ == "__main__":
                         help="Modify the default belt speed.")
     parser.add_argument('--debug', default=False, action='store_true',
                         help="Activate debug output.")
-    args = parser.parse_args()
-    if args.debug:
+    pa = parser.parse_args()
+    if pa.debug:
         log.setLevel(logging.DEBUG)
 
     client, shadow_client, mshadow = core_connect(
-        device_name=args.device_name,
-        config_file=args.config_file, root_ca=args.root_ca,
-        certificate=args.certificate, private_key=args.private_key,
-        group_ca_dir=args.group_ca_dir
+        device_name=pa.device_name,
+        config_file=pa.config_file, root_ca=pa.root_ca,
+        certificate=pa.certificate, private_key=pa.private_key,
+        group_ca_dir=pa.group_ca_dir
     )
 
-    operate_belt(cli=args, mqtt_client=client, master_shadow=mshadow)
+    operate_belt(cli=pa, mqtt_client=client, master_shadow=mshadow)
