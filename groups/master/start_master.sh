@@ -29,5 +29,11 @@ screen -S heartbeat -h 200 -d -m python \
 ~/mini-fulfillment/groups/master/ggd/certs/heartbeat_ggd.pem \
 ~/mini-fulfillment/groups/master/ggd/certs/heartbeat_ggd.prv \
 ~/mini-fulfillment/groups/master/ggd/certs --frequency 0.1
-screen -S web -h 200 -d -m python -m master.ggd.web master/cfg.tmp.json
+screen -S web -h 200 -d -m python \
+-m master.ggd.web web_ggd \
+~/mini-fulfillment/groups/master/cfg.json \
+~/mini-fulfillment/groups/master/ggd/certs/root-ca.pem \
+~/mini-fulfillment/groups/master/ggd/certs/web_ggd.pem \
+~/mini-fulfillment/groups/master/ggd/certs/web_ggd.prv \
+~/mini-fulfillment/groups/master/ggd/certs
 screen -ls
