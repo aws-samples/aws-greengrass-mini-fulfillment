@@ -20,6 +20,10 @@ from AWSIoTPythonSDK.core.protocol.connection.cores import \
 from AWSIoTPythonSDK.exception.AWSIoTExceptions import \
     DiscoveryInvalidRequestException, DiscoveryFailure
 from AWSIoTPythonSDK.exception import operationTimeoutException
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
+from AWSIoTPythonSDK.MQTTLib import DROP_OLDEST, AWSIoTMQTTShadowClient
+from gg_group_setup import GroupConfigFile
 
 
 def mqtt_connect(mqtt_client, core_info):
@@ -45,6 +49,49 @@ def mqtt_connect(mqtt_client, core_info):
             print("Exception caught:{0}".format(e.message))
 
     return connected
+
+
+def local_core_shadow_connect(device_name, config_file, root_ca, certificate,
+                              private_key, group_ca_dir):
+    cfg = GroupConfigFile(config_file)
+    ggd_name = cfg['devices'][device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
+
+    dip = DiscoveryInfoProvider()
+    dip.configureEndpoint(iot_endpoint)
+    dip.configureCredentials(
+        caPath=root_ca, certPath=certificate, keyPath=private_key
+    )
+    dip.configureTimeout(10)  # 10 sec
+    logging.info("[core_connect] Discovery using CA:{0} cert:{1} prv_key:{2}".format(
+        root_ca, certificate, private_key
+    ))
+    gg_core, group_ca_file = discover_cores(
+        cfg=cfg, dip=dip, device_name=ggd_name, group_ca_dir=group_ca_dir
+    )
+    if not gg_core:
+        raise EnvironmentError("[core_connect] Couldn't find the Core")
+
+    # local Greengrass Core discovered
+    # get a shadow client to receive commands
+    mqttsc = AWSIoTMQTTShadowClient(ggd_name)
+
+    # now connect to Core from this Device
+    logging.info("[core_connect] gca_file:{0} cert:{1}".format(
+        group_ca_file, certificate))
+    mqttsc.configureCredentials(group_ca_file, private_key, certificate)
+
+    mqttc = mqttsc.getMQTTConnection()
+    mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+    if not mqtt_connect(mqttsc, gg_core):
+        raise EnvironmentError("connection to Master Shadow failed.")
+
+    # create and register the shadow handler on delta topics for commands
+    # with a persistent connection to the Master shadow
+    master_shadow = mqttsc.createShadowHandlerWithName(
+        cfg['misc']['master_shadow_name'], True)
+
+    return mqttc, mqttsc, master_shadow, ggd_name
 
 
 def discover_cores(cfg, dip, device_name, group_ca_dir):

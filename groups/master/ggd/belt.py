@@ -24,11 +24,7 @@ import logging
 from cachetools import TTLCache
 from .servo.servode import ServoProtocol, ServoGroup, Servo
 
-from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
-    DiscoveryInfoProvider
-from AWSIoTPythonSDK.MQTTLib import DROP_OLDEST, AWSIoTMQTTShadowClient
 import utils
-from gg_group_setup import GroupConfigFile
 
 """
 Greengrass Belt device
@@ -320,51 +316,6 @@ class BeltTelemetryThread(threading.Thread):
                 log.error("[btt.run] RuntimeError:{0}".format(re))
 
 
-def core_connect(device_name, config_file, root_ca, certificate, private_key,
-                 group_ca_dir):
-    global ggd_name
-    cfg = GroupConfigFile(config_file)
-    ggd_name = cfg['devices'][device_name]['thing_name']
-    iot_endpoint = cfg['misc']['iot_endpoint']
-
-    dip = DiscoveryInfoProvider()
-    dip.configureEndpoint(iot_endpoint)
-    dip.configureCredentials(
-        caPath=root_ca, certPath=certificate, keyPath=private_key
-    )
-    dip.configureTimeout(10)  # 10 sec
-    logging.info("[belt] Discovery using CA:{0} cert:{1} prv_key:{2}".format(
-        root_ca, certificate, private_key
-    ))
-    gg_core, group_ca_file = utils.discover_cores(
-        cfg=cfg, dip=dip, device_name=ggd_name, group_ca_dir=group_ca_dir
-    )
-    if not gg_core:
-        raise EnvironmentError("[belt] Couldn't find the Core")
-
-    # local Greengrass Core discovered
-    # get a shadow client to receive commands
-    mqttsc = AWSIoTMQTTShadowClient(ggd_name)
-
-    # now connect to Core from this Device
-    log.info("[belt] gca_file:{0} cert:{1}".format(group_ca_file, certificate))
-    mqttsc.configureCredentials(group_ca_file, private_key, certificate)
-
-    mqttc = mqttsc.getMQTTConnection()
-    mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
-    if not utils.mqtt_connect(mqttsc, gg_core):
-        raise EnvironmentError("connection to Master Shadow failed.")
-
-    # create and register the shadow handler on delta topics for commands
-    # with a persistent connection to the Master shadow
-    master_shadow = mqttsc.createShadowHandlerWithName(
-        cfg['misc']['master_shadow_name'], True)
-    token = master_shadow.shadowGet(shadow_mgr, 5)
-    log.debug("[initialize] shadowGet() tk:{0}".format(token))
-
-    return mqttc, mqttsc, master_shadow
-
-
 def operate_belt(cli, mqtt_client, master_shadow):
     global should_loop
 
@@ -436,11 +387,14 @@ if __name__ == "__main__":
     if pa.debug:
         log.setLevel(logging.DEBUG)
 
-    client, shadow_client, mshadow = core_connect(
+    client, shadow_client, mshadow, ggd_name = utils.local_core_shadow_connect(
         device_name=pa.device_name,
-        config_file=pa.config_file, root_ca=pa.root_ca,
-        certificate=pa.certificate, private_key=pa.private_key,
-        group_ca_dir=pa.group_ca_dir
+        config_file=pa.config_file,
+        root_ca=pa.root_ca, certificate=pa.certificate,
+        private_key=pa.private_key, group_ca_dir=pa.group_ca_dir
     )
+
+    token = mshadow.shadowGet(shadow_mgr, 5)
+    logging.debug("[core_connect] shadowGet() tk:{0}".format(token))
 
     operate_belt(cli=pa, mqtt_client=client, master_shadow=mshadow)

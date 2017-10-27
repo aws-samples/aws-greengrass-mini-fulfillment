@@ -21,24 +21,6 @@
 # inv_arm_port = 8883
 
 
-convey_topics = [
-    "/convey/telemetry",
-    "/convey/errors",
-    "/convey/stages"
-]
-
-sort_bridge_topics = [
-    "/arm/telemetry",
-    "/arm/errors",
-    "/arm/stages"
-]
-
-inv_bridge_topics = [
-    "/arm/telemetry",
-    "/arm/errors",
-    "/arm/stages"
-]
-
 convey_servo_ids = [
     10
 ]

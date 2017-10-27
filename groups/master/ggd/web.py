@@ -26,11 +26,7 @@ from flask import Flask, request, render_template, Response, send_from_directory
 from werkzeug.utils import secure_filename
 from flask_cors import CORS, cross_origin
 
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
-from ..group_config import GroupConfigFile
-
-import ggd_config
-from utils import mqtt_connect
+import utils
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -62,6 +58,24 @@ incr_lock = Lock()
 current_hz = 0
 current_hz_time = dt.datetime.utcnow()
 rollover_lock = Lock()
+
+convey_topics = [
+    "/convey/telemetry",
+    "/convey/errors",
+    "/convey/stages"
+]
+
+sort_bridge_topics = [
+    "/arm/telemetry",
+    "/arm/errors",
+    "/arm/stages"
+]
+
+inv_bridge_topics = [
+    "/arm/telemetry",
+    "/arm/errors",
+    "/arm/stages"
+]
 
 
 def shadow_mgr(payload, status, token):
@@ -189,7 +203,7 @@ def get_shadow():
 
 
 @app.route('/shadow/read')
-def get_shadow():
+def read_shadow():
     return shady_vals
 
 
@@ -279,59 +293,52 @@ def latest_message(topic):
                         status=200,
                         mimetype='application/json')
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Web Greengrass Device',
+        description='Web Greengrass Device (GGD)',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The Web GGD device_name in the config file.")
     parser.add_argument('config_file',
                         help="The config file.")
+    parser.add_argument('root_ca',
+                        help="Root CA File Path of Cloud Server Certificate.")
+    parser.add_argument('certificate',
+                        help="File Path of Web GGD Certificate.")
+    parser.add_argument('private_key',
+                        help="File Path of Web GGD Private Key.")
+    parser.add_argument('group_ca_dir',
+                        help="The directory where the discovered Group CA will "
+                             "be saved.")
     parser.add_argument('--debug', default=False, action='store_true',
                         help="Activate debug output.")
-    args = parser.parse_args()
+    pa = parser.parse_args()
 
     try:
-        cfg = GroupConfigFile(args.config_file)
-
-        web_name = cfg['devices']['GGD_web']['thing_name']
-        # get a shadow client to receive commands
-        mqttc_shadow_client = AWSIoTMQTTShadowClient(web_name)
-        mqttc_shadow_client.configureEndpoint(
-            ggd_config.master_core_ip, ggd_config.master_core_port
-        )
-        mqttc_shadow_client.configureCredentials(
-            CAFilePath=dir_path + "/certs/master-server.crt",
-            KeyPath=dir_path + "/certs/GGD_web.private.key",
-            CertificatePath=dir_path + "/certs/GGD_web.certificate.pem.crt"
-        )
-
-        if not mqtt_connect(mqttc_shadow_client):
-            raise EnvironmentError("connection to Master Shadow failed.")
-
-        mqttc = mqttc_shadow_client.getMQTTConnection()
-
-        # create and register the shadow handler on delta topics for commands
-        global master_shadow
-        master_shadow = mqttc_shadow_client.createShadowHandlerWithName(
-            "MasterBrain",
-            True)  # persistent connection with Master Core shadow
-
-        token = master_shadow.shadowGet(shadow_mgr, 5)
-        log.debug("[initialize] shadowGet() tk:{0}".format(token))
-
-        for t in ggd_config.convey_topics:
-            mqttc.subscribe(t, 1, topic_update)
-            log.info('[initialize] subscribed to topic:{0}'.format(t))
-
-        for t in ggd_config.sort_bridge_topics:
-            mqttc.subscribe(t, 1, topic_update)
-            log.info('[initialize] subscribed to topic:{0}'.format(t))
-
-        for t in ggd_config.inv_bridge_topics:
-            mqttc.subscribe(t, 1, topic_update)
-            log.info('[initialize] subscribed to topic:{0}'.format(t))
-
-        if args.debug:
+        if pa.debug:
             log.setLevel(logging.DEBUG)
+
+        mqttc, shadow_client, mshadow, ggd_name = \
+            utils.local_core_shadow_connect(
+                device_name=pa.device_name,
+                config_file=pa.config_file,
+                root_ca=pa.root_ca, certificate=pa.certificate,
+                private_key=pa.private_key, group_ca_dir=pa.group_ca_dir
+        )
+
+        token = mshadow.shadowGet(shadow_mgr, 5)
+        logging.debug('[__main__] shadowGet() tk:{0}'.format(token))
+
+        for t in convey_topics:
+            mqttc.subscribe(t, 1, topic_update)
+            log.info('[__main__] subscribed to topic:{0}'.format(t))
+        for t in sort_bridge_topics:
+            mqttc.subscribe(t, 1, topic_update)
+            log.info('[__main__] subscribed to topic:{0}'.format(t))
+        for t in inv_bridge_topics:
+            mqttc.subscribe(t, 1, topic_update)
+            log.info('[__main__] subscribed to topic:{0}'.format(t))
 
         app.run(
             host="0.0.0.0",
