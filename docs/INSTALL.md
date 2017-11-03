@@ -25,9 +25,9 @@
     in AWS IoT. Specifically, to create the Greengrass Cores for this example:  
         ```bash
         cd ~/aws-greengrass-mini-fulfillment/groups
-        ./group_setup.py create-core --thing-name sort_arm-core --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm
-        ./group_setup.py create-core --thing-name inv_arm-core --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm
-        ./group_setup.py create-core --thing-name master-core --config-file ./master/cfg.json --cert-dir ./master/certs
+        ./group_setup.py create-core --thing-name sort_arm-core --config-file arm/sort_arm/cfg.json --cert-dir arm/sort_arm
+        ./group_setup.py create-core --thing-name inv_arm-core --config-file arm/inv_arm/cfg.json --cert-dir arm/inv_arm
+        ./group_setup.py create-core --thing-name master-core --config-file master/cfg.json --cert-dir master/certs
         ```
         > **Note:** You can see the details of each created Core recorded in the 
         `cfg.json` files used above in the `create-core` command. Example: 
@@ -53,10 +53,12 @@
     1. Create the Greengrass Device **things** and **certificates** in AWS IoT 
         as follows:
         ```bash
-        ./group_setup.py create-devices --thing-names '[sort_arm_ggd,sort_heartbeat_ggd,bridge_ggd]' --config-file ./arm/sort_arm/cfg.json --cert-dir ./arm/sort_arm/ggd_certs
-        ./group_setup.py create-devices --thing-names '[inv_arm_ggd,inv_heartbeat_ggd,bridge_ggd]' --config-file ./arm/inv_arm/cfg.json --cert-dir ./arm/inv_arm/ggd_certs
-        ./group_setup.py create-devices --thing-names '[button_ggd,belt_ggd,bridge_ggd,heartbeat_ggd,web_ggd]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs
-        ./group_setup.py create-devices --thing-names '[inv_arm_ggd,sort_arm_ggd]' --config-file ./master/cfg.json --cert-dir ./master/ggd/certs --append
+        ./group_setup.py create-devices --thing-names '[sort_arm_ggd,sort_heartbeat_ggd]' --config-file arm/sort_arm/cfg.json --cert-dir arm/sort_arm/ggd_certs
+        ./group_setup.py create-devices --thing-names '[inv_arm_ggd,inv_heartbeat_ggd]' --config-file arm/inv_arm/cfg.json --cert-dir arm/inv_arm/ggd_certs
+        ./group_setup.py create-devices --thing-names '[button_ggd,belt_ggd,bridge_ggd,heartbeat_ggd,web_ggd]' --config-file master/cfg.json --cert-dir master/ggd/certs
+        ./group_setup.py associate-devices --thing-names '[inv_arm_ggd,sort_arm_ggd]' --config-file master/cfg.json
+        ./group_setup.py associate-devices --thing-names '[bridge_ggd]' --config-file arm/sort_arm/cfg.json
+        ./group_setup.py associate-devices --thing-names '[bridge_ggd]' --config-file arm/inv_arm/cfg.json
         ```
         > **Note:** You can see the details of each create Device recorded in the 
         `cfg.json` files used above in the `create-devices` command. Example:
