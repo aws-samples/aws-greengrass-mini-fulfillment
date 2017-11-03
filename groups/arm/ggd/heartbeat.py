@@ -12,6 +12,17 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+"""
+Greengrass Heartbeat device
+
+This Greengrass device simply provides a stream of heartbeat messages. These 
+messages can be useful when debugging the overall IoT solution as they are the 
+simplest messages being sent, on the simplest path.
+
+This device expects to be launched form a command line. To learn more about that 
+command line type: `python heartbeat.py --help`
+"""
+
 import os
 import json
 import time
@@ -25,19 +36,8 @@ from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
 import utils
-from utils import mqtt_connect, ggc_discovery
 from gg_group_setup import GroupConfigFile
 
-"""
-Greengrass Heartbeat device
-
-This Greengrass device simply provides a stream of heartbeat messages. These 
-messages can be useful when debugging the overall IoT solution as they are the 
-simplest messages being sent, on the simplest path.
-
-This device expects to be launched form a command line. To learn more about that 
-command line type: `python heartbeat.py --help`
-"""
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 heartbeat_topic = '/heart/beat'
@@ -60,7 +60,6 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
     heartbeat_name = cfg['devices'][device_name]['thing_name']
     iot_endpoint = cfg['misc']['iot_endpoint']
     local_core = None
-    group_ca = None
 
     # Discover Greengrass Core
     dip = DiscoveryInfoProvider()
@@ -72,9 +71,15 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
     log.info("[hb] Discovery using CA: {0} cert: {1} prv_key: {2}".format(
         root_ca, certificate, private_key
     ))
-    discovered, discovery_info, group_list, group_ca_file = ggc_discovery(
-        heartbeat_name, dip, group_ca_dir, retry_count=10
+    # Now discover the groups in which this device is a member.
+    # The heartbeat should only be in one group
+    discovered, discovery_info = utils.ggc_discovery(
+        heartbeat_name, dip, retry_count=10, max_groups=1
     )
+
+    ca_list = discovery_info.getAllCas()
+    group_id, ca = ca_list[0]
+    group_ca_file = utils.save_group_ca(ca, group_ca_dir, group_id)
 
     if discovered is False:
         log.error(
@@ -88,7 +93,7 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
     mqttc = AWSIoTMQTTClient(heartbeat_name)
 
     # find this device Group's core
-    for group in group_list:
+    for group in discovery_info.getAllGroups():
         utils.dump_core_info_list(group.coreConnectivityInfoList)
         local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
         if local_core:
@@ -98,12 +103,12 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
     if not local_core:
         raise EnvironmentError("[hb] Couldn't find the local Core")
 
-    # local Greengrass Core discovered, now connect to Core from this Device
+    # local Core discovered, now connect to Core from this Device
     log.info("[hb] gca_file:{0} cert:{1}".format(group_ca_file, certificate))
     mqttc.configureCredentials(group_ca_file, private_key, certificate)
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
+    if not utils.mqtt_connect(mqtt_client=mqttc, core_info=local_core):
         raise EnvironmentError("[hb] Connection to GG Core MQTT failed.")
 
     return mqttc, heartbeat_name
