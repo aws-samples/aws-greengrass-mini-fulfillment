@@ -12,31 +12,6 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-import os
-import json
-import time
-import requests
-import logging
-import argparse
-import datetime
-import threading
-import collections
-from cachetools import TTLCache
-from requests import ConnectionError
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, AWSIoTMQTTShadowClient
-
-import ggd_config
-
-from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
-    DiscoveryInfoProvider
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
-import utils
-from utils import mqtt_connect, ggc_discovery
-from gg_group_setup import GroupConfigFile
-
-from stages import ArmStages, NO_BOX_FOUND
-from servo.servode import Servo, ServoProtocol, ServoGroup
-
 """
 Greengrass Arm device
 
@@ -63,6 +38,31 @@ shadow are:
 This device expects to be launched form a command line. To learn more about that 
 command line type: `python arm.py --help`
 """
+
+import os
+import json
+import time
+import requests
+import logging
+import argparse
+import datetime
+import threading
+import collections
+from cachetools import TTLCache
+from requests import ConnectionError
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, AWSIoTMQTTShadowClient
+
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+import utils
+from utils import mqtt_connect
+from gg_group_setup import GroupConfigFile
+
+from stages import ArmStages, NO_BOX_FOUND
+from servo.servode import Servo, ServoProtocol, ServoGroup
+
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('arm')
@@ -74,6 +74,7 @@ log.addHandler(handler)
 log.setLevel(logging.INFO)
 
 commands = ['run', 'stop']
+arm_servo_ids = [20, 21, 22, 23, 24]
 
 should_loop = True
 
@@ -98,14 +99,13 @@ def shadow_mgr(payload, status, token):
 
 def initialize(device_name, config_file, root_ca, certificate, private_key,
                group_ca_dir):
-    global mqttc
     global ggd_name
 
     cfg = GroupConfigFile(config_file)
-    local_core = None
-    master_core = None
+    local = dict()
+    remote = dict()
 
-    # determine heartbeat device's thing name and orient MQTT client to GG Core
+    # determine heartbeat device's thing name and endpoint for MQTT clients
     ggd_name = cfg['devices'][device_name]['thing_name']
     iot_endpoint = cfg['misc']['iot_endpoint']
 
@@ -119,59 +119,95 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
     log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
         root_ca, certificate, private_key
     ))
-    discovered, discovery_info, group_list, group_ca_file = ggc_discovery(
-        ggd_name, dip, group_ca_dir, retry_count=10
+    # Now discover the groups in which this device is a member.
+    # The arm should only be in two groups. The local and master groups.
+    discovered, discovery_info = utils.ggc_discovery(
+        ggd_name, dip, retry_count=10, max_groups=2
     )
 
-    log.info("[arm.initialize] found {0} groups for this device.".format(
-        len(group_list))
-    )
-    # find the arm Group's core.
+    # Each group returned has a groupId which can compare to the configured
+    # groupId in the config file. If the IDs match, the 'local' Group has been
+    # found and therefore local core.
+    # If the groupId's do not match, the 'remote' or 'master' group has been
+    # found.
+    group_list = discovery_info.getAllGroups()
     for group in group_list:
-        utils.dump_core_info_list(group.coreConnectivityInfoList)
-        local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
+        if group.groupId == cfg['group']['id']:
+            local_cores = group.coreConnectivityInfoList()
+            local['core'] = local_cores[0]  # just grab first core as local
+            local['ca'] = group.caList
+        else:
+            remote_cores = group.coreConnectivityInfoList()
+            remote['core'] = remote_cores[0]  # just grab first core as remote
+            remote['ca'] = group.caList
 
-        if local_core:
-            log.info('[arm..initialize] Found the local core and Group CA.')
-            break
+    if len(local) > 1 and len(remote) > 1:
+        logging.info("[arm.initialize] local_core:{0} remote_core:{1}".format(
+            local, remote
+        ))
+    else:
+        raise EnvironmentError("Couldn't find the arm's Cores.")
 
-    if not local_core:
-        raise EnvironmentError("Couldn't find the local Core")
+    # just save one of the group's CAs to use as a CA file later
+    # TODO upgrade to try connecting using multiple CAs and credentials
+    local_core_ca_file = utils.save_group_ca(
+        local['ca'][0], group_ca_dir, local['core'].groupId
+    )
+    remote_core_ca_file = utils.save_group_ca(
+        remote['ca'][0], group_ca_dir, remote['core'].groupId
+    )
 
-    # Greengrass Core discovered, now connect to Core from this Device
-    log.info("[arm.initialize] gca_file:{0} cert:{1}".format(
-        group_ca_file, certificate))
-    mqttc.configureCredentials(group_ca_file, private_key, certificate)
+    # ca_list = discovery_info.getAllCas()
+    # core_list = discovery_info.getAllCores()
+    # group_id, ca = ca_list[0]
+    # core_info = core_list[0]
+    # logging.info("[arm.initialize] Discovered Core:{0} from Group:{1}".format(
+    #     core_info.coreThingArn, group_id)
+    # )
+    # group_ca_file = utils.save_group_ca(ca, group_ca_dir, group_id)
+    #
+    # # find the arm Group's core.
+    # for group in discovery_info.getAllGroups():
+    #     utils.dump_core_info_list(group.coreConnectivityInfoList)
+    #     local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
+    #
+    #     if local_core:
+    #         log.info('[arm..initialize] Found the local core and Group CA.')
+    #         break
+
+    # Greengrass Cores discovered, now connect to Cores from this Device
+    global mqttc
+    # get a client to send telemetry
+    master_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
+    log.info("[arm.initialize] local gca_file:{0} cert:{1}".format(
+        local_core_ca_file, certificate))
+    mqttc.configureCredentials(local_core_ca_file, private_key, certificate)
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    if not mqtt_connect(mqtt_client=mqttc, core_info=local_core):
+    if not mqtt_connect(mqtt_client=mqttc, core_info=local['core']):
         raise EnvironmentError("Connection to GG Core MQTT failed.")
 
-    # m_core_info = utils.get_conn_info(core_list)
     global master_shadow_client
     # get a shadow client to receive commands
     master_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
-    mqttc.configureCredentials(group_ca, private_key, certificate)
+    log.info("[arm.initialize] local gca_file:{0} cert:{1}".format(
+        local_core_ca_file, certificate))
+    mqttc.configureCredentials(remote_core_ca_file, private_key, certificate)
 
     if not mqtt_connect(mqtt_client=master_shadow_client,
-                        core_info=m_core_info):
+                        core_info=remote['core']):
         raise EnvironmentError("Connection to Master Shadow failed.")
 
     global master_shadow
     # create and register the shadow handler on delta topics for commands
     # with a persistent connection to the Master shadow
     master_shadow = master_shadow_client.createShadowHandlerWithName(
-        ggd_config.master_shadow_name, True)
+        cfg['misc']['master_shadow_name'], True)
 
     token = master_shadow.shadowGet(shadow_mgr, 5)
     log.info("[initialize] shadowGet() tk:{0}".format(token))
 
-    with ServoProtocol() as sproto:
-        # TODO ensure Baud rate is maxed
-        for servo_id in ggd_config.arm_servo_ids:
-            sproto.ping(servo=servo_id)
-
-    return core_info, master_core_info
+    return
 
 
 def _stage_message(stage, text='', stage_result=None):
@@ -326,23 +362,24 @@ class ArmControlThread(threading.Thread):
                 log.info("[act.find] no box:{0}".format(stage_result))
                 time.sleep(1)
 
-        # upload the image file just before stage complete
-        if 'filename' in stage_result:
-            filename = stage_result['filename']
-
-            url = 'http://' + ggd_config.master_core_ip + ":"
-            url = url + str(ggd_config.master_core_port) + "/upload"
-            files = {'file': open(filename, 'rb')}
-            try:
-                log.info('[act.find] POST to URL:{0} file:{1}'.format(
-                    url, filename))
-                r = requests.post(url, files=files)
-                log.info("[act.find] POST image file response:{0}".format(
-                    r.status_code))
-            except ConnectionError as ce:
-                log.error("[act.find] Upload Image connection error:{0}".format(
-                    ce
-                ))
+        # TODO get image upload working with discovery based interaction
+        # # upload the image file just before stage complete
+        # if 'filename' in stage_result:
+        #     filename = stage_result['filename']
+        #
+        #     url = 'http://' + ggd_config.master_core_ip + ":"
+        #     url = url + str(ggd_config.master_core_port) + "/upload"
+        #     files = {'file': open(filename, 'rb')}
+        #     try:
+        #         log.info('[act.find] POST to URL:{0} file:{1}'.format(
+        #             url, filename))
+        #         r = requests.post(url, files=files)
+        #         log.info("[act.find] POST image file response:{0}".format(
+        #             r.status_code))
+        #     except ConnectionError as ce:
+        #         log.error("[act.find] Upload Image connection error:{0}".format(
+        #             ce
+        #         ))
 
         mqttc.publish(
             self.stage_topic, _stage_message("find", "end", stage_result), 0)
@@ -479,18 +516,21 @@ if __name__ == "__main__":
         log.setLevel(logging.DEBUG)
         logging.getLogger('servode').setLevel(logging.DEBUG)
 
-    core_info, master_core_info = initialize(
+    initialize(
         args.device_name, args.config_file, args.root_ca, args.certificate,
         args.private_key, args.group_ca_dir
     )
 
     with ServoProtocol() as sp:
+        for servo_id in arm_servo_ids:
+            sp.ping(servo=servo_id)
+
         sg = ServoGroup()
-        sg['base'] = Servo(sp, ggd_config.arm_servo_ids[0], base_servo_cache)
-        sg['femur01'] = Servo(sp, ggd_config.arm_servo_ids[1], femur01_servo_cache)
-        sg['femur02'] = Servo(sp, ggd_config.arm_servo_ids[2], femur02_servo_cache)
-        sg['tibia'] = Servo(sp, ggd_config.arm_servo_ids[3], tibia_servo_cache)
-        sg['effector'] = Servo(sp, ggd_config.arm_servo_ids[4], eff_servo_cache)
+        sg['base'] = Servo(sp, arm_servo_ids[0], base_servo_cache)
+        sg['femur01'] = Servo(sp, arm_servo_ids[1], femur01_servo_cache)
+        sg['femur02'] = Servo(sp, arm_servo_ids[2], femur02_servo_cache)
+        sg['tibia'] = Servo(sp, arm_servo_ids[3], tibia_servo_cache)
+        sg['effector'] = Servo(sp, arm_servo_ids[4], eff_servo_cache)
 
         # Use same ServoGroup with one read cache because only the telemetry
         # thread reads
