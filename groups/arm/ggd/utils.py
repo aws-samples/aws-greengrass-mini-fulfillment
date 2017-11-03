@@ -20,6 +20,10 @@ from AWSIoTPythonSDK.core.protocol.connection.cores import \
 from AWSIoTPythonSDK.exception.AWSIoTExceptions import \
     DiscoveryInvalidRequestException, DiscoveryFailure
 from AWSIoTPythonSDK.exception import operationTimeoutException
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
+from AWSIoTPythonSDK.MQTTLib import DROP_OLDEST, AWSIoTMQTTShadowClient
+from gg_group_setup import GroupConfigFile
 
 
 def mqtt_connect(mqtt_client, core_info):
@@ -47,33 +51,98 @@ def mqtt_connect(mqtt_client, core_info):
     return connected
 
 
-def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
-                  retry_count=10):
+def local_shadow_connect(device_name, config_file, root_ca, certificate,
+                         private_key, group_ca_dir):
+    cfg = GroupConfigFile(config_file)
+    ggd_name = cfg['devices'][device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
+
+    dip = DiscoveryInfoProvider()
+    dip.configureEndpoint(iot_endpoint)
+    dip.configureCredentials(
+        caPath=root_ca, certPath=certificate, keyPath=private_key
+    )
+    dip.configureTimeout(10)  # 10 sec
+    logging.info(
+        "[shadow_connect] Discovery using CA:{0} cert:{1} prv_key:{2}".format(
+            root_ca, certificate, private_key
+    ))
+    gg_core, discovery_info = discover_configured_core(
+        config_file=config_file, dip=dip, device_name=ggd_name,
+    )
+    if not gg_core:
+        raise EnvironmentError("[core_connect] Couldn't find the Core")
+
+    ca_list = discovery_info.getAllCas()
+    core_list = discovery_info.getAllCores()
+    group_id, ca = ca_list[0]
+    core_info = core_list[0]
+    logging.info("Discovered Greengrass Core:{0} from Group:{1}".format(
+        core_info.coreThingArn, group_id)
+    )
+    group_ca_file = save_group_ca(ca, group_ca_dir, group_id)
+
+    # local Greengrass Core discovered
+    # get a shadow client to receive commands
+    mqttsc = AWSIoTMQTTShadowClient(ggd_name)
+
+    # now connect to Core from this Device
+    logging.info("[core_connect] gca_file:{0} cert:{1}".format(
+        group_ca_file, certificate))
+    mqttsc.configureCredentials(group_ca_file, private_key, certificate)
+
+    mqttc = mqttsc.getMQTTConnection()
+    mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+    if not mqtt_connect(mqttsc, gg_core):
+        raise EnvironmentError("connection to Master Shadow failed.")
+
+    # create and register the shadow handler on delta topics for commands
+    # with a persistent connection to the Master shadow
+    master_shadow = mqttsc.createShadowHandlerWithName(
+        cfg['misc']['master_shadow_name'], True)
+
+    return mqttc, mqttsc, master_shadow, ggd_name
+
+
+def discover_configured_core(device_name, dip, config_file):
+    cfg = GroupConfigFile(config_file)
+    gg_core = None
+    # Discover Greengrass Core
+
+    discovered, discovery_info = ggc_discovery(
+        device_name, dip, retry_count=10
+    )
+    logging.info("[discover_cores] Device: {0} discovery success".format(
+        device_name)
+    )
+
+    # find the configured Group's core
+    for group in discovery_info.getAllGroups():
+        dump_core_info_list(group.coreConnectivityInfoList)
+        gg_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
+
+        if gg_core:
+            logging.info('Found the configured core and Group CA.')
+            break
+
+    return gg_core, discovery_info
+
+
+def ggc_discovery(thing_name, discovery_info_provider, retry_count=10,
+                  max_groups=1):
     back_off_core = ProgressiveBackOffCore()
     discovered = False
     discovery_info = None
     group_list = None
-    group_ca_file = None
 
     while retry_count != 0:
         try:
             discovery_info = discovery_info_provider.discover(thing_name)
-            ca_list = discovery_info.getAllCas()
-            core_list = discovery_info.getAllCores()
             group_list = discovery_info.getAllGroups()
 
-            # TODO upgrade logic to support multiple discovered groups
-            if len(group_list) > 1:
+            if len(group_list) > max_groups:
                 raise DiscoveryFailure("Discovered more groups than expected")
 
-            # Only pick and save the first CA and Core info (currently)
-            group_id, ca = ca_list[0]
-            core_info = core_list[0]
-            logging.info("Discovered Greengrass Core:{0} from Group:{1}".format(
-                core_info.coreThingArn, group_id)
-            )
-
-            group_ca_file = save_group_ca(ca, group_ca_path, group_id)
             discovered = True
             break
         except DiscoveryFailure as df:
@@ -89,9 +158,9 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
         except BaseException as e:
             logging.error(
                 "Error in discovery:{0} type:{1} message:{2} thing_name:{3} "
-                "dip:{4} group_ca_path:{5}".format(
+                "dip:{4}".format(
                     e, str(type(e)), e.message, thing_name,
-                    discovery_info_provider, group_ca_path)
+                    discovery_info_provider)
             )
             back_off = True
 
@@ -101,17 +170,17 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             logging.debug("Backing off...\n")
             back_off_core.backOff()
 
-    return discovered, discovery_info, group_list, group_ca_file
+    return discovered, discovery_info
 
 
 def save_group_ca(group_ca, group_ca_path, group_id):
-    logging.info("Saving the Group CA file...")
+    logging.info("[save_group_ca] saving file...")
     group_ca_file = group_ca_path + '/' + group_id + "_CA.crt"
     if not os.path.exists(group_ca_path):
         os.makedirs(group_ca_path)
     with open(group_ca_file, "w") as crt:
         crt.write(group_ca)
-    logging.info('Saved group CA file:{0}'.format(group_ca_file))
+    logging.info('[save_group_ca] Saved CA file:{0}'.format(group_ca_file))
 
     return group_ca_file
 
