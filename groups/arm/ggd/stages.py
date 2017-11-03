@@ -12,6 +12,17 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+"""
+This file dictates the specifics of the motion of the arms.
+
+Additionally, this file contains an ArmStages object that is instantiated by the
+Greengrass Arm device every time a new stage is to be processed. Additionally, 
+this file contains a command-line supporting manual operation and tuning of an 
+arm through one stage at a time.
+ 
+Note: At this point in time, tuning of an arm requires modifications to the 
+servo values contained in this file.
+"""
 import math
 import time
 import logging
@@ -24,19 +35,7 @@ from servo.servode import Servo, ServoGroup, ServoProtocol
 
 from image_processor import ImageProcessor
 
-import ggd_config
 
-"""
-This file dictates the specifics of the motion of the arms.
-
-Additionally, this file contains an ArmStages object that is instantiated by the
-Greengrass Arm device every time a new stage is to be processed. Additionally, 
-this file contains a command-line supporting manual operation and tuning of an 
-arm through one stage at a time.
- 
-Note: At this point in time, tuning of an arm requires modifications to the 
-servo values contained in this file.
-"""
 log = logging.getLogger('stages')
 handler = logging.StreamHandler()
 formatter = logging.Formatter(
