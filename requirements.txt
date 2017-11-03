@@ -4,7 +4,7 @@ awscli==1.11.164
 AWSIoTPythonSDK==1.2.0
 backports.shutil-get-terminal-size==1.0.0
 boto3==1.4.7
-botocore==1.7.24
+botocore>=1.7.24
 cachetools==2.0.0
 certifi==2017.7.27.1
 cffi==1.10.0
@@ -16,7 +16,7 @@ docutils==0.14
 enum34==1.1.6
 fire==0.1.2
 futures==3.1.1
-gg-group-setup==0.4.7
+gg-group-setup==0.4.11
 idna==2.6
 ipaddress==1.0.18
 ipython==5.4.1
