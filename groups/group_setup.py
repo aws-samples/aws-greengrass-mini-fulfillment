@@ -193,37 +193,37 @@ class MasterGroupType(GroupType):
             {  # from Master bridge device to Master web device
                 "Id": "18",
                 "Source": d[self.bridge_ggd_name]['thing_arn'],
-                "Subject": "/sort/arm/#",
+                "Subject": "sort/arm/#",
                 "Target": d[self.web_ggd_name]['thing_arn']
             },
             {  # from Master bridge device to MasterBrain Lambda
                 "Id": "19",
                 "Source": d[self.bridge_ggd_name]['thing_arn'],
-                "Subject": "/sort/arm/stages",
+                "Subject": "sort/arm/stages",
                 "Target": l['MasterBrain']['arn']
             },
             {  # from Master bridge device to MasterBrain Lambda
                 "Id": "20",
                 "Source": d[self.bridge_ggd_name]['thing_arn'],
-                "Subject": "/sort/arm/errors",
+                "Subject": "sort/arm/errors",
                 "Target": l['MasterBrain']['arn']
             },
             {  # from Master bridge device to MasterBrain Lambda, stages topic
                 "Id": "21",
                 "Source": d[self.bridge_ggd_name]['thing_arn'],
-                "Subject": "/inv/arm/stages",
+                "Subject": "inv/arm/stages",
                 "Target": l['MasterBrain']['arn']
             },
             {  # from Master bridge device to MasterBrain Lambda, errors topic
                 "Id": "22",
                 "Source": d[self.bridge_ggd_name]['thing_arn'],
-                "Subject": "/inv/arm/errors",
+                "Subject": "inv/arm/errors",
                 "Target": l['MasterBrain']['arn']
             },
             {  # from Master bridge device to Master web device, all topics
                 "Id": "23",
                 "Source": d[self.bridge_ggd_name]['thing_arn'],
-                "Subject": "/inv/arm/#",
+                "Subject": "inv/arm/#",
                 "Target": d[self.web_ggd_name]['thing_arn']
             },
             {  # from Master belt device to Greengrass Core local shadow, get
@@ -301,13 +301,13 @@ class MasterGroupType(GroupType):
             {  # from Master heartbeat device to AWS cloud
                 "Id": "97",
                 "Source": d[self.heartbeat_ggd_name]['thing_arn'],
-                "Subject": "/heart/beat",
+                "Subject": "heart/beat",
                 "Target": "cloud"
             },
             {  # from Master button device to MasterBrain Lambda
                 "Id": "98",
                 "Source": d[self.button_ggd_name]['thing_arn'],
-                "Subject": "/button",
+                "Subject": "button",
                 "Target": l['MasterBrain']['arn']
             }
         ]
@@ -434,13 +434,13 @@ class ArmGroupType(GroupType):
             {  # from Group's heartbeat device to bridge device
                 "Id": "95",
                 "Source": d[self.heartbeat_ggd_name]['thing_arn'],
-                "Subject": "/heart/beat",
+                "Subject": "heart/beat",
                 "Target": d[self.bridge_ggd_name]['thing_arn']
             },
             {  # from Group's heartbeat device to AWS cloud
                 "Id": "97",
                 "Source": d[self.heartbeat_ggd_name]['thing_arn'],
-                "Subject": "/heart/beat",
+                "Subject": "heart/beat",
                 "Target": "cloud"
             }
         ]
