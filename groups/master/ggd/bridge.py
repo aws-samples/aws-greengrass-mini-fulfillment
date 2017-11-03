@@ -50,13 +50,13 @@ should_loop = True
 def sorting_bridge(client, userdata, message):
     log.debug('[sort_bridge] subscr_topic:{0} msg:{1}'.format(
         message.topic, message.payload))
-    mqttc_master.publish("/sort"+message.topic, message.payload, 0)
+    mqttc_master.publish("sort/"+message.topic, message.payload, 0)
 
 
 def inventory_bridge(client, userdata, message):
     log.debug('[inv_bridge] subscr_topic:{0} msg:{1}'.format(
         message.topic, message.payload))
-    mqttc_master.publish("/inv"+message.topic, message.payload, 0)
+    mqttc_master.publish("inv/"+message.topic, message.payload, 0)
 
 
 if __name__ == '__main__':

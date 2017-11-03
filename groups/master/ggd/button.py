@@ -42,7 +42,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-GGD_BUTTON_TOPIC = "/button"
+GGD_BUTTON_TOPIC = "button"
 
 hostname = socket.gethostname()
 green_led = PWMLED(4)

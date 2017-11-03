@@ -58,9 +58,9 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-BELT_TELEMETRY_TOPIC = "/convey/telemetry"
-BELT_ERRORS_TOPIC = "/convey/errors"
-STAGE_TOPIC = "/convey/stages"
+BELT_TELEMETRY_TOPIC = "convey/telemetry"
+BELT_ERRORS_TOPIC = "convey/errors"
+STAGE_TOPIC = "convey/stages"
 
 commands = ['run', 'stop']
 belt_ids = [10]  # when there is one conveyor, there is one servo ID
