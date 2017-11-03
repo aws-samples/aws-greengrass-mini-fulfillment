@@ -21,10 +21,12 @@ import logging
 import argparse
 import datetime
 
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
-import ggd_config
-from utils import mqtt_connect
+# import ggd_config
+import utils
 from gg_group_setup import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -57,15 +59,68 @@ def inventory_bridge(client, userdata, message):
     mqttc_master.publish("/inv"+message.topic, message.payload, 0)
 
 
-def init_bridge():
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="GGD that subscribes to topics from another GG Core.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The GGD device_name in the config file.")
+    parser.add_argument('config_file',
+                        help="The config file.")
+    parser.add_argument('root_ca',
+                        help="Root CA File Path of Cloud Server Certificate.")
+    parser.add_argument('certificate',
+                        help="File Path of GGD Certificate.")
+    parser.add_argument('private_key',
+                        help="File Path of GGD Private Key.")
+    parser.add_argument('group_ca_dir',
+                        help="The directory where the discovered Group CA will "
+                             "be saved.")
+    parser.add_argument('--debug', default=False, action='store_true',
+                        help="Activate debug output.")
+
+    pa = parser.parse_args()
+    if pa.debug:
+        log.setLevel(logging.DEBUG)
+
+    # read the config file
+    cfg = GroupConfigFile(pa.config_file)
+    ggd_name = cfg['devices'][pa.device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
+
+    # prep for discovery
+    dip = DiscoveryInfoProvider()
+    dip.configureEndpoint(iot_endpoint)
+    dip.configureCredentials(
+        caPath=pa.root_ca, certPath=pa.certificate, keyPath=pa.private_key
+    )
+    dip.configureTimeout(10)  # 10 sec
+    logging.info("Discovery using CA:{0} cert:{1} prv_key:{2}".format(
+        pa.root_ca, pa.certificate, pa.private_key
+    ))
+
+    discovered, discovery_info, group_list, group_ca_file = utils.ggc_discovery(
+        thing_name=ggd_name, discovery_info_provider=dip,
+        group_ca_path=pa.group_ca_path
+    )
+
+    # create an MQTT client oriented toward the Master Greengrass Core
+    mqttc_master = AWSIoTMQTTClient(ggd_name)
+
+    # create an MQTT client oriented toward the Sorting Arm Greengrass Core
+    mqttc_sort_arm = AWSIoTMQTTClient(ggd_name)
+
+    # create an MQTT client oriented toward the Inventory Arm Greengrass Core
+    mqttc_inv_arm = AWSIoTMQTTClient(ggd_name)
+
     log.info("[bridge] Starting connection to Master Core")
-    if mqtt_connect(mqttc_master):
+    if utils.mqtt_connect(mqttc_master):
         log.info("[bridge] Connected to Master Core")
     else:
         log.error("[bridge] could not connect to Master/Conveyor Core")
 
     log.info("[bridge] Starting connection to Sorting Arm Core")
-    if mqtt_connect(mqttc_sort_arm):
+    if utils.mqtt_connect(mqttc_sort_arm):
         for topic in ggd_config.sort_bridge_topics:
             log.info("[bridge] bridging topic:{0}".format(topic))
             mqttc_sort_arm.subscribe(topic, 1, sorting_bridge)
@@ -73,61 +128,12 @@ def init_bridge():
         log.error("[bridge] could not connect to Sorting Arm Core")
 
     log.info("[bridge] Starting connection to Inventory Arm Core")
-    if mqtt_connect(mqttc_inv_arm):
+    if utils.mqtt_connect(mqttc_inv_arm):
         for topic in ggd_config.inv_bridge_topics:
             log.info("[bridge] bridging topic:{0}".format(topic))
             mqttc_inv_arm.subscribe(topic, 1, inventory_bridge)
     else:
         log.error("[bridge] could not connect to Inventory Arm Core")
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description="GGD that subscribes to topics from another GG Core.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--debug', default=False, action='store_true',
-                        help="Activate debug output.")
-    parser.add_argument('config_file',
-                        help="The config file.")
-
-    args = parser.parse_args()
-    if args.debug:
-        log.setLevel(logging.DEBUG)
-
-    # read the config file
-    cfg = GroupConfigFile(args.config_file)
-    ggd_name = cfg['devices']['GGD_bridge']['thing_name']
-
-    # create an MQTT client oriented toward the Master Greengrass Core
-    mqttc_master = AWSIoTMQTTClient(ggd_name)
-    mqttc_master.configureEndpoint(
-        ggd_config.master_core_ip, ggd_config.master_core_port)
-    mqttc_master.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
-        KeyPath=dir_path + "/certs/GGD_bridge.private.key",
-        CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
-    )
-
-    # create an MQTT client oriented toward the Sorting Arm Greengrass Core
-    mqttc_sort_arm = AWSIoTMQTTClient(ggd_name)
-    mqttc_sort_arm.configureEndpoint(
-        ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
-    mqttc_sort_arm.configureCredentials(
-        CAFilePath=dir_path + "/certs/sort_arm-server.crt",
-        KeyPath=dir_path + "/certs/GGD_bridge.private.key",
-        CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
-    )
-
-    # create an MQTT client oriented toward the Inventory Arm Greengrass Core
-    mqttc_inv_arm = AWSIoTMQTTClient(ggd_name)
-    mqttc_inv_arm.configureEndpoint(
-        ggd_config.inv_arm_ip, ggd_config.inv_arm_port)
-    mqttc_inv_arm.configureCredentials(
-        CAFilePath=dir_path + "/certs/inv_arm-server.crt",
-        KeyPath=dir_path + "/certs/GGD_bridge.private.key",
-        CertificatePath=dir_path + "/certs/GGD_bridge.certificate.pem.crt"
-    )
-
-    init_bridge()
 
     try:
         start = datetime.datetime.now()

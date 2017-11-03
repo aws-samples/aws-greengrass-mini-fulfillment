@@ -122,7 +122,7 @@ def discover_cores(cfg, dip, device_name, group_ca_dir):
 
 
 def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
-                  retry_count=10):
+                  retry_count=10, max_groups=1):
     back_off_core = ProgressiveBackOffCore()
     discovered = False
     discovery_info = None
@@ -137,7 +137,7 @@ def ggc_discovery(thing_name, discovery_info_provider, group_ca_path,
             group_list = discovery_info.getAllGroups()
 
             # TODO upgrade logic to support multiple discovered groups
-            if len(group_list) > 1:
+            if len(group_list) > max_groups:
                 raise DiscoveryFailure("Discovered more groups than expected")
 
             # Only pick and save the first CA and Core info (currently)
