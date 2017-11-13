@@ -46,4 +46,5 @@ If any of those values are not empty, the `create` function has been run previou
   
 If you still want to execute the `create` function, prior to executing `create` remove the Group containing the particular host's Greengrass Core. To do this, 
 browse to the Greengrass console and delete the Group.
+
 `-=-=-=-=-`

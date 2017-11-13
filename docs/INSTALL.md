@@ -2,7 +2,7 @@
 # Installation Instructions
 1. Install OS (Jessie-Lite Sept) on three hosts.
     > **Note:** this demo has been built using Raspberry Pi 3 computers
-1. Configure the three hosts to be on the same network and note each host's IP  
+1. Configure the three hosts to be on the same network and note each host's IP
 1. On each host make a `~/mini-fulfillment` directory
 1. Back on your development machine, execute the following steps.
     1. [Install](http://docs.aws.amazon.com/cli/latest/userguide/installing.html) 
@@ -65,7 +65,7 @@
         ```json
           ...
           "devices": {
-            "GGD_sort_arm": {
+            "sort_arm_ggd": {
               "cert_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:cert/EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
               "cert_id": "EXAMPLEba1EXAMPLE32b63db0d3a830b7874dcb791cc045ad9bc7c64a058c87e",
               "thing_arn": "arn:aws:iot:us-west-2:EXAMPLE_ACCT:thing/sort_arm_ggd",
@@ -110,6 +110,7 @@
         ```
         > **Note:** the `--group-name` options above can be a name of your choosing
 1. Prep the Greengrass software
+    1. [Prepare](http://docs.aws.amazon.com/greengrass/latest/developerguide/prepare-raspi.html) each host for Greengrass  
     1. Go [here](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/software/greengrass) 
        in the AWS console and download the `greengrass-linux-armv7` distribution
     1. Perform the **Installing the AWS Greengrass Core** [step](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-tutorial-rpi.html#gg-tutorial-rpi-provision-ggc)
