@@ -78,10 +78,7 @@ arm_servo_ids = [20, 21, 22, 23, 24]
 
 should_loop = True
 
-mqttc = None
-master_shadow_client = None
 ggd_name = 'Empty'
-master_shadow = None
 cmd_event = threading.Event()
 cmd_event.clear()
 
@@ -131,18 +128,19 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
     # If the groupId's do not match, the 'remote' or 'master' group has been
     # found.
     group_list = discovery_info.getAllGroups()
-    for group in group_list:
-        if group.groupId == cfg['group']['id']:
-            local_cores = group.coreConnectivityInfoList()
+    for g in group_list:
+        logging.info("[initialize] group_id:{0}".format(g.groupId))
+        if g.groupId == cfg['group']['id']:
+            local_cores = g.coreConnectivityInfoList
             local['core'] = local_cores[0]  # just grab first core as local
-            local['ca'] = group.caList
+            local['ca'] = g.caList
         else:
-            remote_cores = group.coreConnectivityInfoList()
+            remote_cores = g.coreConnectivityInfoList
             remote['core'] = remote_cores[0]  # just grab first core as remote
-            remote['ca'] = group.caList
+            remote['ca'] = g.caList
 
     if len(local) > 1 and len(remote) > 1:
-        logging.info("[arm.initialize] local_core:{0} remote_core:{1}".format(
+        logging.info("[initialize] local_core:{0} remote_core:{1}".format(
             local, remote
         ))
     else:
@@ -157,57 +155,43 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
         remote['ca'][0], group_ca_dir, remote['core'].groupId
     )
 
-    # ca_list = discovery_info.getAllCas()
-    # core_list = discovery_info.getAllCores()
-    # group_id, ca = ca_list[0]
-    # core_info = core_list[0]
-    # logging.info("[arm.initialize] Discovered Core:{0} from Group:{1}".format(
-    #     core_info.coreThingArn, group_id)
-    # )
-    # group_ca_file = utils.save_group_ca(ca, group_ca_dir, group_id)
-    #
-    # # find the arm Group's core.
-    # for group in discovery_info.getAllGroups():
-    #     utils.dump_core_info_list(group.coreConnectivityInfoList)
-    #     local_core = group.getCoreConnectivityInfo(cfg['core']['thing_arn'])
-    #
-    #     if local_core:
-    #         log.info('[arm..initialize] Found the local core and Group CA.')
-    #         break
-
     # Greengrass Cores discovered, now connect to Cores from this Device
-    global mqttc
     # get a client to send telemetry
-    master_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
-    log.info("[arm.initialize] local gca_file:{0} cert:{1}".format(
+    local_mqttc = AWSIoTMQTTClient(ggd_name)
+    log.info("[initialize] local gca_file:{0} cert:{1}".format(
         local_core_ca_file, certificate))
-    mqttc.configureCredentials(local_core_ca_file, private_key, certificate)
-    mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+    local_mqttc.configureCredentials(
+        local_core_ca_file, private_key, certificate
+    )
+    local_mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    if not mqtt_connect(mqtt_client=mqttc, core_info=local['core']):
+    if not mqtt_connect(mqtt_client=local_mqttc, core_info=local['core']):
         raise EnvironmentError("Connection to GG Core MQTT failed.")
 
-    global master_shadow_client
     # get a shadow client to receive commands
     master_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
-    log.info("[arm.initialize] local gca_file:{0} cert:{1}".format(
+    log.info("[initialize] ca_file:{0} cert:{1}".format(
         local_core_ca_file, certificate))
-    mqttc.configureCredentials(remote_core_ca_file, private_key, certificate)
+    remote_mqttc = master_shadow_client.getMQTTConnection()
+    remote_mqttc.configureCredentials(
+        remote_core_ca_file, private_key, certificate
+    )
 
     if not mqtt_connect(mqtt_client=master_shadow_client,
                         core_info=remote['core']):
         raise EnvironmentError("Connection to Master Shadow failed.")
 
-    global master_shadow
     # create and register the shadow handler on delta topics for commands
     # with a persistent connection to the Master shadow
     master_shadow = master_shadow_client.createShadowHandlerWithName(
         cfg['misc']['master_shadow_name'], True)
-
+    log.info("[initialize] created handler for shadow name: {0}".format(
+        cfg['misc']['master_shadow_name']
+    ))
     token = master_shadow.shadowGet(shadow_mgr, 5)
     log.info("[initialize] shadowGet() tk:{0}".format(token))
 
-    return
+    return local_mqttc, remote_mqttc, master_shadow
 
 
 def _stage_message(stage, text='', stage_result=None):
@@ -258,7 +242,8 @@ class ArmControlThread(threading.Thread):
     """
     # TODO move control into Lambda pending being able to access serial port
 
-    def __init__(self, servo_group, event, stage_topic, args=(), kwargs={}):
+    def __init__(self, servo_group, event, stage_topic, mqtt_client,
+                 master_shadow, args=(), kwargs={}):
         super(ArmControlThread, self).__init__(
             name="arm_control_thread", args=args, kwargs=kwargs
         )
@@ -273,9 +258,11 @@ class ArmControlThread(threading.Thread):
         self.control_stages['pick'] = self.pick
         self.control_stages['sort'] = self.sort
         self.stage_topic = stage_topic
+        self.mqtt_client = mqtt_client
+        self.master_shadow = master_shadow
         self.found_box = None
 
-        master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
+        self.master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
         log.debug("[arm.__init__] shadowRegisterDeltaCallback()")
 
     def _activate_command(self, cmd):
@@ -320,7 +307,7 @@ class ArmControlThread(threading.Thread):
                 self._activate_command(cmd)
 
                 # acknowledge the desired state is now reported
-                master_shadow.shadowUpdate(json.dumps({
+                self.master_shadow.shadowUpdate(json.dumps({
                     "state": {
                         "reported": {
                             "sort_arm_cmd": cmd}
@@ -333,10 +320,13 @@ class ArmControlThread(threading.Thread):
     def home(self):
         log.debug("[act.home] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(self.stage_topic, _stage_message("home", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("home", "begin"), 0
+        )
         stage_result = arm.stage_home()
-        mqttc.publish(
-            self.stage_topic, _stage_message("home", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("home", "end", stage_result), 0
+        )
         log.debug("[act.home] [end]")
         return stage_result
 
@@ -346,7 +336,9 @@ class ArmControlThread(threading.Thread):
         loop = True
         self.found_box = NO_BOX_FOUND
         stage_result = NO_BOX_FOUND
-        mqttc.publish(self.stage_topic, _stage_message("find", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("find", "begin"), 0
+        )
         while self.cmd_event.is_set() and loop is True:
             stage_result = arm.stage_find()
             if stage_result['x'] and stage_result['y']:  # X & Y start as none
@@ -381,8 +373,9 @@ class ArmControlThread(threading.Thread):
         #             ce
         #         ))
 
-        mqttc.publish(
-            self.stage_topic, _stage_message("find", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("find", "end", stage_result), 0
+        )
 
         log.info("[act.find] outside self.found_box:{0}".format(self.found_box))
         log.debug("[act.find] [end]")
@@ -391,25 +384,31 @@ class ArmControlThread(threading.Thread):
     def pick(self):
         log.debug("[act.pick] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(self.stage_topic, _stage_message("pick", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("pick", "begin"), 0
+        )
         pick_box = self.found_box
         self.found_box = NO_BOX_FOUND
         log.info("[act.pick] pick_box:{0}".format(pick_box))
         log.info("[act.pick] self.found_box:{0}".format(self.found_box))
         stage_result = arm.stage_pick(previous_results=pick_box,
                                       cartesian=False)
-        mqttc.publish(
-            self.stage_topic, _stage_message("pick", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("pick", "end", stage_result), 0
+        )
         log.debug("[act.pick] [end]")
         return stage_result
 
     def sort(self):
         log.debug("[act.sort] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(self.stage_topic, _stage_message("sort", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("sort", "begin"), 0
+        )
         stage_result = arm.stage_sort()
-        mqttc.publish(
-            self.stage_topic, _stage_message("sort", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("sort", "end", stage_result), 0
+        )
         log.debug("[act.sort] [end]")
         return stage_result
 
@@ -468,20 +467,21 @@ class ArmTelemetryThread(threading.Thread):
     """
 
     def __init__(self, servo_group, frequency, telemetry_topic,
-                 args=(), kwargs={}):
+                 mqtt_client, args=(), kwargs={}):
         super(ArmTelemetryThread, self).__init__(
             name="arm_telemetry_thread", args=args, kwargs=kwargs
         )
         self.sg = servo_group
         self.frequency = frequency
         self.telemetry_topic = telemetry_topic
+        self.mqtt_client = mqtt_client
         log.info("[att.__init__] frequency:{0}".format(
             self.frequency))
 
     def run(self):
         while should_loop:
             msg = _arm_message(self.sg)
-            mqttc.publish(self.telemetry_topic, json.dumps(msg), 0)
+            self.mqtt_client.publish(self.telemetry_topic, json.dumps(msg), 0)
             time.sleep(self.frequency)  # sample rate
 
 
@@ -516,7 +516,7 @@ if __name__ == "__main__":
         log.setLevel(logging.DEBUG)
         logging.getLogger('servode').setLevel(logging.DEBUG)
 
-    initialize(
+    local_mqtt, remote_mqtt, m_shadow = initialize(
         args.device_name, args.config_file, args.root_ca, args.certificate,
         args.private_key, args.group_ca_dir
     )
@@ -534,9 +534,14 @@ if __name__ == "__main__":
 
         # Use same ServoGroup with one read cache because only the telemetry
         # thread reads
-        amt = ArmTelemetryThread(sg, frequency=args.frequency,
-                                 telemetry_topic=args.telemetry_topic)
-        act = ArmControlThread(sg, cmd_event, stage_topic=args.stage_topic)
+        amt = ArmTelemetryThread(
+            sg, frequency=args.frequency, telemetry_topic=args.telemetry_topic,
+            mqtt_client=local_mqtt
+        )
+        act = ArmControlThread(
+            sg, cmd_event, stage_topic=args.stage_topic,
+            mqtt_client=remote_mqtt, master_shadow=m_shadow
+        )
         amt.start()
         act.start()
 
@@ -551,5 +556,6 @@ if __name__ == "__main__":
         amt.join()
         act.join()
 
-    mqttc.disconnect()
+    local_mqtt.disconnect()
+    remote_mqtt.disconnect()
     time.sleep(2)
