@@ -56,6 +56,7 @@
         ./group_setup.py create-devices --thing-names '[sort_arm_ggd,sort_heartbeat_ggd]' --config-file arm/sort_arm/cfg.json --cert-dir arm/sort_arm/ggd_certs
         ./group_setup.py create-devices --thing-names '[inv_arm_ggd,inv_heartbeat_ggd]' --config-file arm/inv_arm/cfg.json --cert-dir arm/inv_arm/ggd_certs
         ./group_setup.py create-devices --thing-names '[button_ggd,belt_ggd,bridge_ggd,heartbeat_ggd,web_ggd]' --config-file master/cfg.json --cert-dir master/ggd/certs
+        ./group_setup.py create-devices --thing-names '[master_brain]' --config-file master/cfg.json --cert-dir master/ggd/certs --append True --cloud_sync True
         ./group_setup.py associate-devices --thing-names '[inv_arm_ggd,sort_arm_ggd]' --config-file master/cfg.json
         ./group_setup.py associate-devices --thing-names '[bridge_ggd]' --config-file arm/sort_arm/cfg.json
         ./group_setup.py associate-devices --thing-names '[bridge_ggd]' --config-file arm/inv_arm/cfg.json
