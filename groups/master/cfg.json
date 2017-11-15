@@ -27,6 +27,7 @@
   },
   "group": {
     "id": "",
+    "name": "",
     "version": "",
     "version_arn": ""
   },
@@ -46,16 +47,18 @@
   },
   "misc": {
     "account_id": "",
-    "iot_endpoint": ""
+    "iot_endpoint": "",
+    "master_shadow_name": "master_brain",
+    "policy_name": "ggc-default-policy"
   },
   "subscription_def": {
     "id": "",
     "version_arn": ""
   },
   "subscriptions": {
-    "all": "/convey/#",
-    "errors": "/convey/errors",
-    "stages": "/convey/stages",
-    "telemetry": "/convey/telemetry"
+    "all": "convey/#",
+    "errors": "convey/errors",
+    "stages": "convey/stages",
+    "telemetry": "convey/telemetry"
   }
 }
