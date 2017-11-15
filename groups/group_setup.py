@@ -34,7 +34,8 @@ class MasterGroupType(GroupType):
     def __init__(self, config=None, region='us-west-2', belt_name='belt_ggd',
                  bridge_name='bridge_ggd', button_name='button_ggd',
                  web_name='web_ggd', heartbeat_name='heartbeat_ggd',
-                 sort_arm_name='sort_arm_ggd', inv_arm_name='inv_arm_ggd'):
+                 sort_arm_name='sort_arm_ggd', inv_arm_name='inv_arm_ggd',
+                 master_brain_shadow='master_brain'):
         super(MasterGroupType, self).__init__(
             type_name=MasterGroupType.MASTER_TYPE, config=config, region=region
         )
@@ -45,6 +46,7 @@ class MasterGroupType(GroupType):
         self.heartbeat_ggd_name = heartbeat_name
         self.sort_arm_ggd_name = sort_arm_name
         self.inv_arm_ggd_name = inv_arm_name
+        self.master_brain_shadow = master_brain_shadow
 
     def get_core_definition(self, config):
         """
@@ -79,49 +81,60 @@ class MasterGroupType(GroupType):
                 "ThingArn": cfg['devices'][self.belt_ggd_name]['thing_arn'],
                 "CertificateArn": cfg['devices'][self.belt_ggd_name][
                     'cert_arn'],
-                "SyncShadow": False
+                "SyncShadow": cfg['devices'][self.belt_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_11".format(self.type_name),
                 "ThingArn": cfg['devices'][self.bridge_ggd_name]['thing_arn'],
                 "CertificateArn": cfg['devices'][self.bridge_ggd_name][
                     'cert_arn'],
-                "SyncShadow": False
+                "SyncShadow": cfg['devices'][self.bridge_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_12".format(self.type_name),
                 "ThingArn": cfg['devices'][self.button_ggd_name]['thing_arn'],
                 "CertificateArn": cfg['devices'][self.button_ggd_name][
                     'cert_arn'],
-                "SyncShadow": False
+                "SyncShadow": cfg['devices'][self.button_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_13".format(self.type_name),
                 "ThingArn": cfg['devices'][self.inv_arm_ggd_name]['thing_arn'],
-                "CertificateArn": cfg['devices'][self.inv_arm_ggd_name][
-                    'cert_arn'],
-                "SyncShadow": False
+                "CertificateArn":
+                    cfg['devices'][self.inv_arm_ggd_name]['cert_arn'],
+                "SyncShadow": cfg['devices'][self.inv_arm_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_14".format(self.type_name),
                 "ThingArn": cfg['devices'][self.sort_arm_ggd_name]['thing_arn'],
-                "CertificateArn": cfg['devices'][self.sort_arm_ggd_name][
-                    'cert_arn'],
-                "SyncShadow": False
+                "CertificateArn":
+                    cfg['devices'][self.sort_arm_ggd_name]['cert_arn'],
+                "SyncShadow":
+                    cfg['devices'][self.sort_arm_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_15".format(self.type_name),
-                "ThingArn": cfg['devices'][self.heartbeat_ggd_name][
-                    'thing_arn'],
-                "CertificateArn": cfg['devices'][self.heartbeat_ggd_name][
-                    'cert_arn'],
-                "SyncShadow": False
+                "ThingArn":
+                    cfg['devices'][self.heartbeat_ggd_name]['thing_arn'],
+                "CertificateArn":
+                    cfg['devices'][self.heartbeat_ggd_name]['cert_arn'],
+                "SyncShadow":
+                    cfg['devices'][self.heartbeat_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_16".format(self.type_name),
                 "ThingArn": cfg['devices'][self.web_ggd_name]['thing_arn'],
                 "CertificateArn": cfg['devices'][self.web_ggd_name]['cert_arn'],
-                "SyncShadow": False
+                "SyncShadow": cfg['devices'][self.web_ggd_name]['cloud_sync']
+            },
+            {
+                "Id": "{0}_17".format(self.type_name),
+                "ThingArn":
+                    cfg['devices'][self.master_brain_shadow]['thing_arn'],
+                "CertificateArn":
+                    cfg['devices'][self.master_brain_shadow]['cert_arn'],
+                "SyncShadow":
+                    cfg['devices'][self.master_brain_shadow]['cloud_sync']
             }
         ]
         logging.debug('[master.get_device_definition] definition:{0}'.format(
@@ -181,13 +194,13 @@ class MasterGroupType(GroupType):
             {  # from Master web device to Greengrass Core local shadow
                 "Id": "16",
                 "Source": d[self.web_ggd_name]['thing_arn'],
-                "Subject": "$aws/things/MasterBrain/shadow/get",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get",
                 "Target": "GGShadowService"
             },
             {  # from Greengrass Core local shadow to Master web device
                 "Id": "17",
                 "Source": "GGShadowService",
-                "Subject": "$aws/things/MasterBrain/shadow/get/#",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get/#",
                 "Target": d[self.web_ggd_name]['thing_arn']
             },
             {  # from Master bridge device to Master web device
@@ -229,73 +242,73 @@ class MasterGroupType(GroupType):
             {  # from Master belt device to Greengrass Core local shadow, get
                 "Id": "31",
                 "Source": d[self.belt_ggd_name]['thing_arn'],
-                "Subject": "$aws/things/MasterBrain/shadow/get",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get",
                 "Target": "GGShadowService"
             },
             {  # from Greengrass Core local shadow to Master belt device, get
                 "Id": "32",
                 "Source": "GGShadowService",
-                "Subject": "$aws/things/MasterBrain/shadow/get/#",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get/#",
                 "Target": d[self.belt_ggd_name]['thing_arn']
             },
             {  # from Master belt device to Greengrass Core local shadow, update
                 "Id": "34",
                 "Source": d[self.belt_ggd_name]['thing_arn'],
-                "Subject": "$aws/things/MasterBrain/shadow/update",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/update",
                 "Target": "GGShadowService"
             },
             {  # from Greengrass Core local shadow to Master belt device, update
                 "Id": "35",
                 "Source": "GGShadowService",
-                "Subject": "$aws/things/MasterBrain/shadow/update/#",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/update/#",
                 "Target": d[self.belt_ggd_name]['thing_arn']
             },
             {  # from InvArm arm device to Master Greengrass Core local shadow
                 "Id": "84",
                 "Source": d[self.inv_arm_ggd_name]['thing_arn'],  # GGD matches ArmType
-                "Subject": "$aws/things/MasterBrain/shadow/get",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get",
                 "Target": "GGShadowService"
             },
             {  # from Master Greengrass Core local shadow to InvArm arm device
                 "Id": "85",
                 "Source": "GGShadowService",
-                "Subject": "$aws/things/MasterBrain/shadow/get/#",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get/#",
                 "Target": d[self.inv_arm_ggd_name]['thing_arn']  # GGD matches ArmType
             },
             {  # from InvArm arm device to Master Greengrass Core local shadow
                 "Id": "86",
                 "Source": d[self.inv_arm_ggd_name]['thing_arn'],  # GGD matches ArmType
-                "Subject": "$aws/things/MasterBrain/shadow/update",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/update",
                 "Target": "GGShadowService"
             },
             {  # from Master Greengrass Core local shadow to InvArm arm device
                 "Id": "87",
                 "Source": "GGShadowService",
-                "Subject": "$aws/things/MasterBrain/shadow/update/#",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/update/#",
                 "Target": d[self.inv_arm_ggd_name]['thing_arn']  # GGD matches ArmType
             },
             {  # from SortArm arm device to Master Greengrass Core local shadow
                 "Id": "92",
                 "Source": d[self.sort_arm_ggd_name]['thing_arn'],  # GGD matches ArmType
-                "Subject": "$aws/things/MasterBrain/shadow/get",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get",
                 "Target": "GGShadowService"
             },
             {  # from Master Greengrass Core local shadow to SortArm arm device
                 "Id": "93",
                 "Source": "GGShadowService",
-                "Subject": "$aws/things/MasterBrain/shadow/get/#",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/get/#",
                 "Target": d[self.sort_arm_ggd_name]['thing_arn']  # GGD matches ArmType
             },
             {  # from SortArm arm device to Master Greengrass Core local shadow
                 "Id": "94",
                 "Source": d[self.sort_arm_ggd_name]['thing_arn'],  # GGD matches ArmType
-                "Subject": "$aws/things/MasterBrain/shadow/update",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/update",
                 "Target": "GGShadowService"
             },
             {  # from Master Greengrass Core local shadow to SortArm arm device
                 "Id": "95",
                 "Source": "GGShadowService",
-                "Subject": "$aws/things/MasterBrain/shadow/update/#",
+                "Subject": "$aws/things/"+ self.master_brain_shadow + "/shadow/update/#",
                 "Target": d[self.sort_arm_ggd_name]['thing_arn']  # GGD matches ArmType
             },
             {  # from Master heartbeat device to AWS cloud
@@ -363,14 +376,14 @@ class ArmGroupType(GroupType):
                 "Id": "{0}_20".format(self.type_name),
                 "ThingArn": cfg['devices'][self.arm_ggd_name]['thing_arn'],
                 "CertificateArn": cfg['devices'][self.arm_ggd_name]['cert_arn'],
-                "SyncShadow": False
+                "SyncShadow": cfg['devices'][self.arm_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_21".format(self.type_name),
                 "ThingArn": cfg['devices'][self.bridge_ggd_name]['thing_arn'],
                 "CertificateArn":
                     cfg['devices'][self.bridge_ggd_name]['cert_arn'],
-                "SyncShadow": False
+                "SyncShadow": cfg['devices'][self.bridge_ggd_name]['cloud_sync']
             },
             {
                 "Id": "{0}_22".format(self.type_name),
@@ -378,7 +391,8 @@ class ArmGroupType(GroupType):
                     cfg['devices'][self.heartbeat_ggd_name]['thing_arn'],
                 "CertificateArn":
                     cfg['devices'][self.heartbeat_ggd_name]['cert_arn'],
-                "SyncShadow": False
+                "SyncShadow":
+                    cfg['devices'][self.heartbeat_ggd_name]['cloud_sync']
             }
         ]
         logging.debug(
