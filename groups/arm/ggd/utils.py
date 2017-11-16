@@ -15,6 +15,7 @@ import socket
 import logging
 import traceback
 
+from boto3.session import Session
 from AWSIoTPythonSDK.core.protocol.connection.cores import \
     ProgressiveBackOffCore
 from AWSIoTPythonSDK.exception.AWSIoTExceptions import \
@@ -24,6 +25,16 @@ from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import DROP_OLDEST, AWSIoTMQTTShadowClient
 from gg_group_setup import GroupConfigFile
+
+
+def get_aws_session(region, profile_name=None):
+    if profile_name is None:
+        logging.debug("loading AWS IoT client using 'default' AWS CLI profile")
+        ses = Session(region_name=region).client('iot')
+    else:
+        logging.debug("loading AWS IoT client using '{0}' AWS CLI profile".format(
+            profile_name))
+        ses = Session(region_name=region, profile_name=profile_name)
 
 
 def mqtt_connect(mqtt_client, core_info):
