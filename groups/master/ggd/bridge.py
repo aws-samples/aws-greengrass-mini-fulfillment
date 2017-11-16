@@ -161,8 +161,11 @@ def _find_cores(cfg, discovery_info, iot_endpoint):
     # If the groupId's do not match, the group's name is use to determine the
     # type of group to which the bridge is connecting.
     group_list = discovery_info.getAllGroups()
-    split_endpoint = iot_endpoint.split('.')
-    gg_aws = utils.get_aws_session(region=split_endpoint[2]).client('greengrass')
+    region = iot_endpoint.split('.')[2]
+    logging.info("[_find_cores] connecting to '{0}' for group names".format(
+        region
+    ))
+    gg_aws = utils.get_aws_session(region=region).client('greengrass')
     for g in group_list:
         logging.info("[initialize] group_id:{0}".format(g.groupId))
         if g.groupId == cfg['group']['id']:
@@ -188,7 +191,7 @@ def _find_cores(cfg, discovery_info, iot_endpoint):
                 }
     if len(local) == 2 and len(remote) == 2:
         logging.info(
-            "[initialize] local_core:{0} remote_cores:{1}".format(
+            "[_find_cores] local_core:{0} remote_cores:{1}".format(
                 local, remote
             ))
     else:
