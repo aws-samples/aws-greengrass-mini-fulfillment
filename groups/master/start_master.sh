@@ -27,7 +27,7 @@ screen -S button -h 200 -d -m python \
 ~/mini-fulfillment/groups/master/ggd/certs/root-ca.pem \
 ~/mini-fulfillment/groups/master/ggd/certs/button_ggd.pem \
 ~/mini-fulfillment/groups/master/ggd/certs/button_ggd.prv \
-~/mini-fulfillment/groups/master/ggd/certs
+~/mini-fulfillment/groups/master/ggd/certs box
 screen -S heartbeat -h 200 -d -m python \
 -m master.ggd.heartbeat heartbeat_ggd \
 ~/mini-fulfillment/groups/master/cfg.json \
