@@ -34,7 +34,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from servo.servode import Servo, ServoGroup, ServoProtocol
 
 from image_processor import ImageProcessor
-import arm
+from . import arm_servo_ids
 
 log = logging.getLogger('stages')
 handler = logging.StreamHandler()
@@ -533,11 +533,11 @@ if __name__ == '__main__':
 
     with ServoProtocol() as sp:
         sg = ServoGroup()
-        sg['base'] = Servo(sp, arm.arm_servo_ids[0])
-        sg['femur01'] = Servo(sp, arm.arm_servo_ids[1])
-        sg['femur02'] = Servo(sp, arm.arm_servo_ids[2])
-        sg['tibia'] = Servo(sp, arm.arm_servo_ids[3])
-        sg['effector'] = Servo(sp, arm.arm_servo_ids[4])
+        sg['base'] = Servo(sp, arm_servo_ids[0])
+        sg['femur01'] = Servo(sp, arm_servo_ids[1])
+        sg['femur02'] = Servo(sp, arm_servo_ids[2])
+        sg['tibia'] = Servo(sp, arm_servo_ids[3])
+        sg['effector'] = Servo(sp, arm_servo_ids[4])
 
         event = threading.Event()
         event.set()

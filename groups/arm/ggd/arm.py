@@ -56,7 +56,7 @@ from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
     DiscoveryInfoProvider
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
 import utils
-from utils import mqtt_connect
+from . import arm_servo_ids
 from gg_group_setup import GroupConfigFile
 
 from stages import ArmStages, NO_BOX_FOUND
@@ -74,7 +74,6 @@ log.addHandler(handler)
 log.setLevel(logging.INFO)
 
 commands = ['run', 'stop']
-arm_servo_ids = [20, 21, 22, 23, 24]
 
 should_loop = True
 
@@ -164,7 +163,7 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
     )
     local_mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
 
-    if not mqtt_connect(mqtt_client=local_mqttc, core_info=local['core']):
+    if not utils.mqtt_connect(mqtt_client=local_mqttc, core_info=local['core']):
         raise EnvironmentError("Connection to GG Core MQTT failed.")
 
     # get a shadow client to receive commands
@@ -176,8 +175,8 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
         remote_core_ca_file, private_key, certificate
     )
 
-    if not mqtt_connect(mqtt_client=master_shadow_client,
-                        core_info=remote['core']):
+    if not utils.mqtt_connect(mqtt_client=master_shadow_client,
+                              core_info=remote['core']):
         raise EnvironmentError("Connection to Master Shadow failed.")
 
     # create and register the shadow handler on delta topics for commands
