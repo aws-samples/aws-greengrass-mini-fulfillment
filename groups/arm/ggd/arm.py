@@ -95,7 +95,7 @@ def shadow_mgr(payload, status, token):
 
 
 def initialize(device_name, config_file, root_ca, certificate, private_key,
-               group_ca_dir):
+               group_ca_path):
     global ggd_name
 
     cfg = GroupConfigFile(config_file)
@@ -147,12 +147,11 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
         raise EnvironmentError("Couldn't find the arm's Cores.")
 
     # just save one of the group's CAs to use as a CA file later
-    # TODO upgrade to try connecting using multiple CAs and credentials
     local_core_ca_file = utils.save_group_ca(
-        local['ca'][0], group_ca_dir, local['core'].groupId
+        local['ca'][0], group_ca_path, local['core'].groupId
     )
     remote_core_ca_file = utils.save_group_ca(
-        remote['ca'][0], group_ca_dir, remote['core'].groupId
+        remote['ca'][0], group_ca_path, remote['core'].groupId
     )
 
     # Greengrass Cores discovered, now connect to Cores from this Device
@@ -170,7 +169,7 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
 
     # get a shadow client to receive commands
     master_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
-    log.info("[initialize] ca_file:{0} cert:{1}".format(
+    log.info("[initialize] remote ca_file:{0} cert:{1}".format(
         local_core_ca_file, certificate))
     remote_mqttc = master_shadow_client.getMQTTConnection()
     remote_mqttc.configureCredentials(
@@ -499,7 +498,7 @@ if __name__ == "__main__":
                         help="File Path of GGD Certificate.")
     parser.add_argument('private_key',
                         help="File Path of GGD Private Key.")
-    parser.add_argument('group_ca_dir',
+    parser.add_argument('group_ca_path',
                         help="The directory where the discovered Group CA will "
                              "be saved.")
     parser.add_argument('--stage_topic', default='/arm/stages',
@@ -511,14 +510,14 @@ if __name__ == "__main__":
                         help="Modify the default telemetry sample frequency.")
     parser.add_argument('--debug', default=False, action='store_true',
                         help="Activate debug output.")
-    args = parser.parse_args()
-    if args.debug:
+    pa = parser.parse_args()
+    if pa.debug:
         log.setLevel(logging.DEBUG)
         logging.getLogger('servode').setLevel(logging.DEBUG)
 
     local_mqtt, remote_mqtt, m_shadow = initialize(
-        args.device_name, args.config_file, args.root_ca, args.certificate,
-        args.private_key, args.group_ca_dir
+        pa.device_name, pa.config_file, pa.root_ca, pa.certificate,
+        pa.private_key, pa.group_ca_path
     )
 
     with ServoProtocol() as sp:
@@ -535,11 +534,11 @@ if __name__ == "__main__":
         # Use same ServoGroup with one read cache because only the telemetry
         # thread reads
         amt = ArmTelemetryThread(
-            sg, frequency=args.frequency, telemetry_topic=args.telemetry_topic,
+            sg, frequency=pa.frequency, telemetry_topic=pa.telemetry_topic,
             mqtt_client=local_mqtt
         )
         act = ArmControlThread(
-            sg, cmd_event, stage_topic=args.stage_topic,
+            sg, cmd_event, stage_topic=pa.stage_topic,
             mqtt_client=remote_mqtt, master_shadow=m_shadow
         )
         amt.start()
