@@ -162,7 +162,7 @@ def button_white(cli):
 
 
 def core_connect(device_name, config_file, root_ca, certificate, private_key,
-                 group_ca_dir):
+                 group_ca_path):
     global ggd_name, mqttc
     cfg = GroupConfigFile(config_file)
     ggd_name = cfg['devices'][device_name]['thing_name']
@@ -178,7 +178,7 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
         root_ca, certificate, private_key
     ))
     gg_core, group_ca_file = utils.discover_cores(
-        cfg=cfg, dip=dip, device_name=ggd_name, group_ca_dir=group_ca_dir
+        cfg=cfg, dip=dip, device_name=ggd_name, group_ca_path=group_ca_path
     )
     if not gg_core:
         raise EnvironmentError("[belt] Couldn't find the Core")
@@ -207,9 +207,9 @@ if __name__ == '__main__':
                         help="File Path of GGD Certificate.")
     parser.add_argument('private_key',
                         help="File Path of GGD Private Key.")
-    parser.add_argument('group_ca_dir',
-                        help="The directory where the discovered Group CA will "
-                             "be saved.")
+    parser.add_argument('group_ca_path',
+                        help="The directory path where the discovered Group CA "
+                             "will be saved.")
     subparsers = parser.add_subparsers()
 
     box_parser = subparsers.add_parser(
@@ -254,7 +254,7 @@ if __name__ == '__main__':
         device_name=pa.device_name,
         config_file=pa.config_file, root_ca=pa.root_ca,
         certificate=pa.certificate, private_key=pa.private_key,
-        group_ca_dir=pa.group_ca_dir
+        group_ca_dir=pa.group_ca_path
     )
 
     if utils.mqtt_connect(mqtt_client=client, core_info=core):
