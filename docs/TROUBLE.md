@@ -32,13 +32,12 @@ If the IP addresses change for some reason:
 ```
 
 #### Getting errors when Creating Cores
-If you're getting errors when executing:
+If you're getting errors when executing any of the `create` group commands:
 ```
-$ python arm_setup.py create <config_file>
-...or...
-$ python master_setup.py create <config_file>
+$ ./group_setup.py create sort_arm <config_file>
+...
 ```
-check that the `<config_file> aka. cfg.json` file being used for each host is in 
+check that the `<config_file>` aka. `cfg.json` file being used for each host is in 
 the original state. The original state will have empty values for: 
 `group_arn`, `group_id`, `group_version`, `lambda_list_arn`, `membership_id`, and `membership_list_arn` 
 
@@ -47,4 +46,56 @@ If any of those values are not empty, the `create` function has been run previou
 If you still want to execute the `create` function, prior to executing `create` remove the Group containing the particular host's Greengrass Core. To do this, 
 browse to the Greengrass console and delete the Group.
 
+#### Getting errors when a Greengrass Core is launched
+If you're getting the following error when executing `$ sudo /greengrass/ggc/core/greengrassd start`
+```
+Setting up greengrass daemon
+Validating execution environment
+Found cgroup subsystem: cpu
+Found cgroup subsystem: cpuacct
+Found cgroup subsystem: blkio
+Found cgroup subsystem: memory
+Found cgroup subsystem: devices
+Found cgroup subsystem: freezer
+Found cgroup subsystem: net_cls
+
+Starting greengrass daemon
+Greengrass daemon 20301 failed to start
+thing name is unresolved, error: Certificate hash not found in cores list. ThingName is unresolved
+```
+Then the Greengrass Core was used previously with a different Thing and Certificate. Either re-install the 
+Greengrass Core software from scratch, or edit the `/greengrass/ggc/deployment/group/group.json` back to an unused state, as follows:
+```json
+{
+    "Version": "test group version",
+    "Devices": [],
+    "Cores": [],
+    "GroupDefinitions": {
+        "Logging": {
+            "Content": [
+                {
+                    "Component": "GreengrassSystem",
+                    "Level": "DEBUG",
+                    "Type": "FileSystem",
+                    "Space": 128
+                }
+            ]
+        },
+        "Lambdas": {
+            "ref": null,
+            "Content": []
+        },
+        "Subscriptions": {
+            "ref": null,
+            "Content": []
+        },
+        "ShadowSync": {
+            "ref": null,
+            "Content": []
+        }
+    },
+    "Region": null
+}
+
+```  
 `-=-=-=-=-`
