@@ -16,5 +16,5 @@ screen -S heartbeat -h 200 -d -m python -m arm.ggd.heartbeat sort_heartbeat_ggd 
 ~/mini-fulfillment/groups/arm/sort_arm/ggd_certs/root-ca.pem \
 ~/mini-fulfillment/groups/arm/sort_arm/ggd_certs/sort_heartbeat_ggd.pem \
 ~/mini-fulfillment/groups/arm/sort_arm/ggd_certs/sort_heartbeat_ggd.prv \
-~/mini-fulfillment/groups/arm/sort_arm/ggd_certs --frequency 0.1
+~/mini-fulfillment/groups/arm/sort_arm/ggd_certs
 screen -ls
