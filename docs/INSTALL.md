@@ -109,16 +109,17 @@
         ./group_setup.py deploy ./arm/inv_arm/cfg.json
         ./group_setup.py deploy ./master/cfg.json
         ```
-        > **Note:** the `--group-name` options above can be a name of your choosing
+        > **Note:** until cross-group discovery is improved the `--group-name` options 
+        above must be as written. The `bridge.py` Greengrass Device relies upon them
 1. Prep the Greengrass software
     1. [Prepare](http://docs.aws.amazon.com/greengrass/latest/developerguide/prepare-raspi.html) each host for Greengrass  
     1. Go [here](https://us-west-2.console.aws.amazon.com/iotv2/home?region=us-west-2#/software/greengrass) 
        in the AWS console and download the `greengrass-linux-armv7` distribution
     1. Perform the **Installing the AWS Greengrass Core** [step](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-tutorial-rpi.html#gg-tutorial-rpi-provision-ggc)
 1. Now copy the directories from the developer local `aws-greengrass-mini-fulfillment` repository 
-   to each of the three Raspberry Pi hosts. Specifically,
+   to each of the three Raspberry Pi hosts. Specifically, all contents of:
     - `~/aws-greengrass-mini-fulfillment/groups/arm` to `sort_arm-pi$ ~/mini-fulfillment/groups/arm`
-    - `~/aws-greengrass-mini-fulfillment/groups/arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/arm`
+    - `~/aws-greengrass-mini-fulfillment/groups/arm` to `inv_arm-pi$ ~/mini-fulfillment/groups/arm`, and
     - `~/aws-greengrass-mini-fulfillment/groups/master` to `master-pi$ ~/mini-fulfillment/groups/master`
 1. On the `master` host
     1. `cd ~/mini-fulfillment/groups/master/`
