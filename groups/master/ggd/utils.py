@@ -30,11 +30,14 @@ from gg_group_setup import GroupConfigFile
 def get_aws_session(region, profile_name=None):
     if profile_name is None:
         logging.debug("loading AWS IoT client using 'default' AWS CLI profile")
-        ses = Session(region_name=region).client('iot')
+        ses = Session(region_name=region)
     else:
-        logging.debug("loading AWS IoT client using '{0}' AWS CLI profile".format(
-            profile_name))
+        logging.debug(
+            "loading AWS IoT client using '{0}' AWS CLI profile".format(
+                profile_name))
         ses = Session(region_name=region, profile_name=profile_name)
+
+    return ses
 
 
 def mqtt_connect(mqtt_client, core_info):
