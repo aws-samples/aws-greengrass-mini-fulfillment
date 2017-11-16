@@ -133,7 +133,6 @@ def ggc_discovery(thing_name, discovery_info_provider, retry_count=10,
     back_off_core = ProgressiveBackOffCore()
     discovered = False
     discovery_info = None
-    group_list = None
 
     while retry_count != 0:
         try:
