@@ -8,9 +8,11 @@ version of [Greengrass](https://aws.amazon.com/greengrass/).
 A [video](https://youtu.be/XQQjX8GTEko?t=27m27s) was taken of the completed and 
 operational Greengrass-based miniature fulfillment center, a.k.a. "dual robot arm demo" 
 in action at re:Invent. Since re:Invent this demo and example has continued to 
-evolve and it has been the seed for [other demos](https://youtu.be/dpatdO2uPCA). 
+evolve. It has been the seed for [other demos](https://youtu.be/dpatdO2uPCA) and 
+now supports Greengrass [discovery](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-discover-api.html) 
+capabilities. 
 
-The artifacts, example code, and instructions to construct this demo are now 
+The artifacts, example code, and instructions to construct this demo are 
 available in this repository as an example. We look forward to seeing what 
 you'll do with it.
 
