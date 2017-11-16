@@ -40,7 +40,7 @@ from gg_group_setup import GroupConfigFile
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-heartbeat_topic = '/heart/beat'
+heartbeat_topic = 'heart/beat'
 
 log = logging.getLogger('heartbeat')
 handler = logging.StreamHandler()
@@ -52,7 +52,7 @@ log.setLevel(logging.INFO)
 
 
 def core_connect(device_name, config_file, root_ca, certificate, private_key,
-                 group_ca_dir):
+                 group_ca_path):
     # read the config file
     cfg = GroupConfigFile(config_file)
 
@@ -79,7 +79,7 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
 
     ca_list = discovery_info.getAllCas()
     group_id, ca = ca_list[0]
-    group_ca_file = utils.save_group_ca(ca, group_ca_dir, group_id)
+    group_ca_file = utils.save_group_ca(ca, group_ca_path, group_id)
 
     if discovered is False:
         log.error(
@@ -103,7 +103,7 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key,
     if not local_core:
         raise EnvironmentError("[hb] Couldn't find the local Core")
 
-    # local Core discovered, now connect to Core from this Device
+    # local Greengrass Core discovered, now connect to Core from this Device
     log.info("[hb] gca_file:{0} cert:{1}".format(group_ca_file, certificate))
     mqttc.configureCredentials(group_ca_file, private_key, certificate)
     mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
@@ -157,7 +157,7 @@ if __name__ == '__main__':
                         help="File Path of GGD Certificate.")
     parser.add_argument('private_key',
                         help="File Path of GGD Private Key.")
-    parser.add_argument('group_ca_dir',
+    parser.add_argument('group_ca_path',
                         help="The directory where the discovered Group CA will "
                              "be saved.")
     parser.add_argument('--topic', default=heartbeat_topic,
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         device_name=args.device_name,
         config_file=args.config_file, root_ca=args.root_ca,
         certificate=args.certificate, private_key=args.private_key,
-        group_ca_dir=args.group_ca_dir
+        group_ca_path=args.group_ca_path
     )
     heartbeat(
         mqttc=mqtt_client, heartbeat_name=hb_name,
