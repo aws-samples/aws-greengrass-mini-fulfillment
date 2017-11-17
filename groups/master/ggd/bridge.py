@@ -89,20 +89,16 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
     )
 
     local, remote = _find_cores(cfg, discovery_info, iot_endpoint)
-    # Now just save one of each group's CAs to use as a CA file later
+    # Save each group's CAs to use as a CA file later
     local_core_ca_file = utils.save_group_ca(
         local['ca'][0], group_ca_path, local['core'].groupId
     )
-    sort_arm_core_ca_file = utils.save_group_ca(
-        remote[SORT_ARM_GROUP_NAME]['ca'][0], group_ca_path,
-        remote[SORT_ARM_GROUP_NAME]['core'].groupId
-    )
-    inv_arm_core_ca_file = utils.save_group_ca(
-        remote[INV_ARM_GROUP_NAME]['ca'][0], group_ca_path,
-        remote[INV_ARM_GROUP_NAME]['core'].groupId
-    )
+    for r in remote:
+        remote[r]['ca_file'] = utils.save_group_ca(
+            remote[r]['ca'][0], group_ca_path, remote[r]['core'].groupId
+        )
 
-    # create an MQTT client oriented toward the Master Greengrass Core
+    # create and connect MQTT client pointed toward the Master Greengrass Core
     mqttc_m = AWSIoTMQTTClient(ggd_name)
     log.info("[initialize] local gca_file:{0} cert:{1}".format(
         local_core_ca_file, certificate))
@@ -110,46 +106,36 @@ def initialize(device_name, config_file, root_ca, certificate, private_key,
         local_core_ca_file, private_key, certificate
     )
     mqttc_m.configureOfflinePublishQueueing(10, DROP_OLDEST)
-    # create an MQTT client oriented toward the Sorting Arm Greengrass Core
-    mqttc_sa = AWSIoTMQTTClient(ggd_name)
-    log.info("[initialize] local gca_file:{0} cert:{1}".format(
-        sort_arm_core_ca_file, certificate))
-    mqttc_sa.configureCredentials(
-        sort_arm_core_ca_file, private_key, certificate
-    )
-    # create an MQTT client oriented toward the Inventory Arm Greengrass Core
-    mqttc_ia = AWSIoTMQTTClient(ggd_name)
-    log.info("[initialize] local gca_file:{0} cert:{1}".format(
-        inv_arm_core_ca_file, certificate))
-    mqttc_ia.configureCredentials(
-        inv_arm_core_ca_file, private_key, certificate
-    )
 
-    log.info("[bridge] Starting connection to Master Core")
+    log.info("[initialize] Starting connection to Master Core")
     if utils.mqtt_connect(mqtt_client=mqttc_m, core_info=local['core']):
-        log.info("[bridge] Connected to Master Core")
+        log.info("[initialize] Connected to Master Core")
     else:
-        log.error("[bridge] could not connect to Master Core")
+        log.error("[initialize] could not connect to Master Core")
 
-    log.info("[bridge] Starting connection to Sorting Arm Core")
-    if utils.mqtt_connect(mqtt_client=mqttc_sa,
-                          core_info=remote[SORT_ARM_GROUP_NAME]['core']):
-        for topic in bridged_topics:
-            log.info("[bridge] bridging topic:{0}".format(topic))
-            mqttc_sort_arm.subscribe(topic, 1, sorting_bridge)
-    else:
-        log.error("[bridge] could not connect to Sorting Arm Core")
+    # create and connect MQTT clients pointed toward the remote Greengrass Cores
+    mqttc_list = list()
+    for r in remote:
+        remote_mqttc = AWSIoTMQTTClient(ggd_name)
+        log.info("[initialize] local gca_file:{0} cert:{1}".format(
+            r, certificate))
+        remote_mqttc.configureCredentials(
+            remote[r]['ca_file'], private_key, certificate)
+        remote_mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+        log.info("[initialize] Starting connection to Remote Core")
+        if utils.mqtt_connect(mqtt_client=remote_mqttc,
+                              core_info=remote[r]['core']):
+            log.info("[initialize] Connected to Remote Core:{0}".format(
+                remote[r]['core'].coreThingArn
+            ))
+            mqttc_list.append(remote_mqttc)
+        else:
+            log.error(
+                "[initialize] could not connect to Remote Core:{0}".format(
+                    remote[r]['core'].coreThingArn
+            ))
 
-    log.info("[bridge] Starting connection to Inventory Arm Core")
-    if utils.mqtt_connect(mqtt_client=mqttc_ia,
-                          core_info=remote[INV_ARM_GROUP_NAME]['core']):
-        for topic in bridged_topics:
-            log.info("[bridge] bridging topic:{0}".format(topic))
-            mqttc_inv_arm.subscribe(topic, 1, inventory_bridge)
-    else:
-        log.error("[bridge] could not connect to Inventory Arm Core")
-
-    return mqttc_m, mqttc_sa, mqttc_ia
+    return mqttc_m, mqttc_list
 
 
 def _find_cores(cfg, discovery_info, iot_endpoint):
@@ -162,42 +148,28 @@ def _find_cores(cfg, discovery_info, iot_endpoint):
     # type of group to which the bridge is connecting.
     group_list = discovery_info.getAllGroups()
     region = iot_endpoint.split('.')[2]
-    logging.info("[_find_cores] connecting to '{0}' for group names".format(
-        region
-    ))
-    gg_aws = utils.get_aws_session(region=region).client('greengrass')
     for g in group_list:
-        logging.info("[initialize] group_id:{0}".format(g.groupId))
+        logging.info("[_find_cores] group_id:{0}".format(g.groupId))
         if g.groupId == cfg['group']['id']:
             # found the local core
             local_cores = g.coreConnectivityInfoList
             local['core'] = local_cores[0]  # just grab first core as local
             local['ca'] = g.caList
         else:
-            group_definition = gg_aws.get_group(GroupId=g.groupId)
-            if group_definition['Name'] == SORT_ARM_GROUP_NAME:
-                # found the sort arm core
-                cores = g.coreConnectivityInfoList
-                remote[SORT_ARM_GROUP_NAME] = {
-                    'core': cores[0],  # just grab first core as local
-                    'ca': g.caList
-                }
-            else:
-                # found the inv arm core
-                cores = g.coreConnectivityInfoList
-                remote[INV_ARM_GROUP_NAME] = {
-                    'core': cores[0],
-                    'ca': g.caList
-                }
+            remote_cores = g.coreConnectivityInfoList
+            remote[g.groupId] = {
+                'core': remote_cores[0],  # just grab first core as remote
+                'ca': g.caList
+            }
+
+    logging.info("[_find_cores] local_core:{0} remote_cores:{1}".format(
+        local, remote
+    ))
+
     if len(local) == 2 and len(remote) == 2:
-        logging.info(
-            "[_find_cores] local_core:{0} remote_cores:{1}".format(
-                local, remote
-            ))
+        return local, remote
     else:
         raise EnvironmentError("Couldn't find the bridge's Cores.")
-
-    return local, remote
 
 
 if __name__ == '__main__':
@@ -224,7 +196,7 @@ if __name__ == '__main__':
     if pa.debug:
         log.setLevel(logging.DEBUG)
 
-    mqttc_master, mqttc_sort_arm, mqttc_inv_arm = initialize(
+    mqttc_master, remote_mqttc_list = initialize(
         pa.device_name, pa.config_file, pa.root_ca, pa.certificate,
         pa.private_key, pa.group_ca_path
     )
@@ -240,7 +212,7 @@ if __name__ == '__main__':
 
     mqttc_master.disconnect()
     time.sleep(1)
-    mqttc_sort_arm.disconnect()
-    time.sleep(1)
-    mqttc_inv_arm.disconnect()
+    for m in remote_mqttc_list:
+        m.disconnect()
+        time.sleep(1)
     time.sleep(1)
