@@ -161,7 +161,8 @@ def button_white(cli):
     print("[cli.button_white] publishing button msg: {0}".format(msg))
 
 
-def core_connect(device_name, config_file, root_ca, certificate, private_key):
+def core_connect(device_name, config_file, root_ca, certificate, private_key,
+                 group_ca_path):
     global ggd_name, mqttc
     cfg = GroupConfigFile(config_file)
     ggd_name = cfg['devices'][device_name]['thing_name']
@@ -177,11 +178,15 @@ def core_connect(device_name, config_file, root_ca, certificate, private_key):
         root_ca, certificate, private_key
     ))
 
-    gg_core, group_ca_file = utils.discover_configured_core(
+    gg_core, discovery_info = utils.discover_configured_core(
         device_name=device_name, dip=dip, config_file=config_file,
     )
     if not gg_core:
         raise EnvironmentError("[button] Couldn't find the Core")
+
+    ca_list = discovery_info.getAllCas()
+    group_id, ca = ca_list[0]
+    group_ca_file = utils.save_group_ca(ca, group_ca_path, group_id)
 
     mqttc = AWSIoTMQTTClient(ggd_name)
     # local Greengrass Core discovered, now connect to Core from this Device
@@ -253,7 +258,8 @@ if __name__ == '__main__':
     client, core = core_connect(
         device_name=pa.device_name,
         config_file=pa.config_file, root_ca=pa.root_ca,
-        certificate=pa.certificate, private_key=pa.private_key
+        certificate=pa.certificate, private_key=pa.private_key,
+        group_ca_path=pa.group_ca_path
     )
 
     if utils.mqtt_connect(mqtt_client=client, core_info=core):
