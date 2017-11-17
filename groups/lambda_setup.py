@@ -34,34 +34,42 @@ print("path: {0}".format(dir_path))
 temp_deploy_zip = "deploy.zip"
 
 
-def create(config_file, runtime='python2.7', role_name='NoServiceAccess',
+def create(lambda_config, runtime='python2.7', role_name='NoServiceAccess',
            role_policy='policy.json', assume_role_policy_doc='trust.json'):
 
-    with open(config_file, "r") as f:
-        cfg = json.load(f)
+    with open(lambda_config, "r") as in_file:
+        cfg = json.load(in_file)
 
     func_name = cfg['func_name']
     func_desc = cfg['func_desc']
     lambda_alias = cfg['lambda_alias']
-    lambda_dir = dir_path + '/' + cfg['lambda_dir']
+    abs_lambda_dir = dir_path + '/' + cfg['lambda_dir']
     lambda_handler = cfg['lambda_handler']
     lambda_files = cfg['lambda_files']
     lambda_main = cfg['lambda_main']
 
     role_arn = _create_lambda_policies(assume_role_policy_doc,
                                        func_name=func_name,
-                                       lambda_dir=lambda_dir,
+                                       lambda_dir=abs_lambda_dir,
                                        role_name=role_name,
                                        role_policy=role_policy)
 
-    refresh_lambda_zip(lambda_files, lambda_dir)
-    resp = _create_lambda(
+    refresh_lambda_zip(lambda_files, abs_lambda_dir)
+    lambda_resp = _create_lambda(
         role_arn, func_name, func_desc, lambda_handler, lambda_main, runtime
     )
-    _publish_lambda_version(func_arn=resp['FunctionArn'])
-    _create_function_alias(func_alias=lambda_alias,
-                           func_name=func_name,
-                           func_version=resp['Version'])
+    _publish_lambda_version(func_arn=lambda_resp['FunctionArn'])
+    alias_resp = _create_function_alias(
+        func_alias=lambda_alias,
+        func_name=func_name,
+        func_version=lambda_resp['Version']
+    )
+    cfg['lambda_arn'] = alias_resp['AliasArn']
+    with open(lambda_config, "w") as out_file:
+        json.dump(
+            cfg, out_file, indent=2,
+            separators=(',', ': '), sort_keys=True
+        )
 
     os.remove(temp_deploy_zip)
 

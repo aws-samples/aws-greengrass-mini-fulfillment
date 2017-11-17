@@ -1,11 +1,12 @@
 {
-  "func_name": "ArmErrorDetector",
   "func_desc": "mini-fulfillment function for arm error detection",
+  "func_name": "ArmErrorDetector",
   "lambda_alias": "mini",
-  "lambda_dir": "ArmErrorDetector",
-  "lambda_handler": "handler",
-  "lambda_main": "error_detector",
+  "lambda_arn": "",
+  "lambda_dir": "lambda/ArmErrorDetector",
   "lambda_files": [
     "error_detector.py"
-  ]
+  ],
+  "lambda_handler": "handler",
+  "lambda_main": "error_detector"
 }

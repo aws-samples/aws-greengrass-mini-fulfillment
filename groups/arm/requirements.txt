@@ -1,9 +1,10 @@
-AWSIoTPythonSDK>=1.1.2
-boto3>=1.4.4
+AWSIoTPythonSDK>=1.2.0
+boto3>=1.4.7
 cachetools>=2.0.0
-gg-group-setup>=0.2.1
+fire==0.1.2
+gg-group-setup>=0.5.2
 gpiozero>=1.3.2
 numpy>=1.13.0
 picamera>=1.13
 pypng>=0.0.18
-requests>=2.17.3
+requests>=2.18.1

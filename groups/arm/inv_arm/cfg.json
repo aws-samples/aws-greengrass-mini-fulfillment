@@ -1,8 +1,9 @@
 {
   "core": {
-    "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-    "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-    "thing_name": "<device_thing_name>"
+    "cert_arn": "",
+    "cert_id": "",
+    "thing_arn": "",
+    "thing_name": ""
   },
   "core_def": {
     "id": "",
@@ -13,20 +14,11 @@
     "version_arn": ""
   },
   "devices": {
-    "GGD_arm": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
-    },
-    "GGD_bridge": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<master_bridge_thing_name>",
-      "thing_name": "<master_bridge_thing_name>"
-    },
-    "GGD_heartbeat": {
-      "cert_arn": "arn:aws:iot:us-west-2:<account_id>:cert/EXAMPLEEXAMPLEa95f4e32EXAMPLEa888e13EXAMPLEac56337EXAMPLEeed338a",
-      "thing_arn": "arn:aws:iot:us-west-2:<account_id>:thing/<device_thing_name>",
-      "thing_name": "<device_thing_name>"
+    "device_thing_name": {
+      "cert_arn": "",
+      "cert_id": "",
+      "thing_arn": "",
+      "thing_name": ""
     }
   },
   "func_def": {
@@ -35,27 +27,34 @@
   },
   "group": {
     "id": "",
+    "name": "",
     "version": "",
     "version_arn": ""
   },
   "lambda_functions": {
     "ArmErrorDetector": {
-      "arn": "arn:aws:lambda:us-west-2:<account_id>:function:ArmErrorDetector:<alias>",
-      "arn_qualifier": "<alias>"
+      "arn": "",
+      "arn_qualifier": ""
     }
   },
   "logger_def": {
     "id": "",
     "version_arn": ""
   },
+  "misc": {
+    "account_id": "",
+    "iot_endpoint": "",
+    "master_shadow_name": "master_brain",
+    "policy_name": "ggc-default-policy"
+  },
   "subscription_def": {
     "id": "",
     "version_arn": ""
   },
   "subscriptions": {
-    "all": "/arm/#",
-    "errors": "/arm/errors",
-    "stages": "/arm/stages",
-    "telemetry": "/arm/telemetry"
+    "all": "arm/#",
+    "errors": "arm/errors",
+    "stages": "arm/stages",
+    "telemetry": "arm/telemetry"
   }
 }

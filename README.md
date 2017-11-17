@@ -8,9 +8,11 @@ version of [Greengrass](https://aws.amazon.com/greengrass/).
 A [video](https://youtu.be/XQQjX8GTEko?t=27m27s) was taken of the completed and 
 operational Greengrass-based miniature fulfillment center, a.k.a. "dual robot arm demo" 
 in action at re:Invent. Since re:Invent this demo and example has continued to 
-evolve and it has been the seed for [other demos](https://youtu.be/dpatdO2uPCA). 
+evolve. It has been the seed for [other demos](https://youtu.be/dpatdO2uPCA) and 
+now supports Greengrass [discovery](http://docs.aws.amazon.com/greengrass/latest/developerguide/gg-discover-api.html) 
+capabilities. 
 
-The artifacts, example code, and instructions to construct this demo are now 
+The artifacts, example code, and instructions to construct this demo are 
 available in this repository as an example. We look forward to seeing what 
 you'll do with it.
 
@@ -20,7 +22,7 @@ aws-greengrass-mini-fulfillment/
   +- docs/
   |  +- BOM.md         -- the bill of materials necessary for construction
   |  +- CONSTR.md      -- instructions for physical construction (TODO)
-  |  +- INSTALL.md     -- instructions for software installation
+  |  +- INSTALL.md     -- instructions for software provisioning and install
   |  +- OPERATE.md     -- instructions for operation of the demo
   |  +- TIDBITS.md     -- tiny pieces of setup information that might be helpful
   |  +- TROUBLE.md     -- troubleshooting of install and operation
@@ -127,11 +129,11 @@ This file has commands that are useful when instantiating this demo and that dem
     group type and configuration file. Also stores all of the provisioning 
     artifacts (i.e. `GroupID`, `CoreDefinitionId`, etc.) in the local configuration file.
     - `deploy <config_file>` – deploys a previously provisioned Greengrass Group
-    - `clean_all <config_file>` – cleans up the entirety of an **un-deployed** 
-    Greengrass Group and the locally stored provisioning artifacts.
-- `groups/cert_setup.py` – creates a Certificate Authority (CA) and server certificate 
-for use locally on each host. These protect communication between the Greengrass 
-Core and Greengrass Devices.
+    - `clean-all <config_file>` – cleans up the entirety of a Greengrass Group 
+    and the locally stored provisioning artifacts.
+- `groups/man_cert_setup.py` – manually creates a Certificate Authority (CA) and 
+server certificate for use locally on each host. These protect communication 
+between the Greengrass Core and Greengrass Devices, when not using discovery.
 - `groups/servo_setup.py` – prepares the servo manufacturer's communication library 
 for use on a Raspberry Pi with the Raspbian OS.
 
@@ -145,5 +147,6 @@ or questions you run into here as [Issues](https://github.com/awslabs/aws-greeng
 [Brett Francis](https://github.com/brettf) and [Todd Varland](https://github.com/toddvarland) would like to thank the following. Without their 
 help and existence we simply would not have made this demo.
 
-> **The Francis Family, The Varland Family, [ROBOTIS](https://github.com/ROBOTIS-GIT/DynamixelSDK), [Servode](https://github.com/brettf/servode), Pretty Lights, 
- Sigur Ros, Flume - Insanity, Amazon.com, HBO Silicon Valley, The [Greengrass](https://aws.amazon.com/greengrass/) Developers**
+> **The Francis Family, The Varland Family, [gg-group-setup](https://github.com/awslabs/aws-greengrass-group-setup), 
+[ROBOTIS](https://github.com/ROBOTIS-GIT/DynamixelSDK), [Servode](https://github.com/brettf/servode), 
+Pretty Lights, Sigur Ros, Flume - Insanity, Amazon.com, HBO Silicon Valley, The [Greengrass](https://aws.amazon.com/greengrass/) Developers**

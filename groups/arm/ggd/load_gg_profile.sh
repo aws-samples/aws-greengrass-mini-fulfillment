@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+python -m servo.servode ping 20
 python -m servo.servode write_register torque_enable 1 --sid 20
 python -m servo.servode write_register torque_enable 1 --sid 21
 python -m servo.servode write_register torque_enable 1 --sid 22

@@ -22,12 +22,9 @@ import collections
 import logging
 
 from cachetools import TTLCache
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
 from .servo.servode import ServoProtocol, ServoGroup, Servo
 
-import ggd_config
-from mqtt_utils import mqtt_connect
-from gg_group_setup import GroupConfigFile
+import utils
 
 """
 Greengrass Belt device
@@ -37,12 +34,12 @@ accomplishes this using two threads: one thread to control and report
 upon the belt's movement through `stages` and a separate thread to read and 
 report upon the belt's servo telemetry. 
 
-The control stages that the arm device will execute in order, are:
+The control stages that this belt device will execute in order, are:
 * `roll` - the belt is in the rolling stage
 
-To act in a coordinated fashion with the other Group's in the 
-miniature fulfillment center, this device also subscribes to device shadow in 
-the Master Greengrass Group. The commands that are understood from the master 
+To act in a coordinated fashion with the other Groups in the miniature 
+fulfillment center, this device also subscribes to a device shadow in the Master 
+Greengrass Group. The commands that are understood from the master 
 shadow are:
 * `run` - the belt will start the rolling stage
 * `stop` - the belt will cease operation and stop
@@ -61,10 +58,9 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-
-GGD_BELT_TELEMETRY_TOPIC = "/convey/telemetry"
-GGD_BELT_ERRORS_TOPIC = "/convey/errors"
-STAGE_TOPIC = "/convey/stages"
+BELT_TELEMETRY_TOPIC = "convey/telemetry"
+BELT_ERRORS_TOPIC = "convey/errors"
+STAGE_TOPIC = "convey/stages"
 
 commands = ['run', 'stop']
 belt_ids = [10]  # when there is one conveyor, there is one servo ID
@@ -72,9 +68,7 @@ bone_servo_cache = TTLCache(maxsize=32, ttl=120)
 should_loop = True
 cmd_event = threading.Event()
 cmd_event.clear()
-cfg = None
 ggd_name = 'Empty'
-master_shadow = None
 
 
 def shadow_mgr(payload, status, token):
@@ -134,8 +128,8 @@ class BeltControlThread(threading.Thread):
     """
 
     # TODO move control into Lambda
-    def __init__(self, servo_group, event, belt_speed, stage_topic, frequency,
-                 args=(), kwargs={}):
+    def __init__(self, servo_group, event, belt_speed, frequency,
+                 mqtt_client, master_shadow, args=(), kwargs={}):
         super(BeltControlThread, self).__init__(
             name="belt_control_thread", args=args, kwargs=kwargs
         )
@@ -149,8 +143,10 @@ class BeltControlThread(threading.Thread):
         self.last_state = 'initialized'
         self.control_stages = collections.OrderedDict()
         self.control_stages['roll'] = self.roll
+        self.mqttc = mqtt_client
+        self.master_shadow = master_shadow
 
-        master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
+        self.master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
         log.debug("[bct.__init__] shadowRegisterDeltaCallback()")
 
     def _activate_command(self, cmd):
@@ -167,7 +163,7 @@ class BeltControlThread(threading.Thread):
             self.cmd_event.clear()
 
         # acknowledge the desired state is now reported
-        master_shadow.shadowUpdate(json.dumps({
+        self.master_shadow.shadowUpdate(json.dumps({
             "state": {
                 "reported": {
                     "convey_cmd": cmd}
@@ -183,7 +179,7 @@ class BeltControlThread(threading.Thread):
             if self.reversed is False:
                 self.sg.wheel_speed(self.belt_speed, cw=False)
                 self.reversed = True
-                mqttc.publish(
+                self.mqttc.publish(
                     STAGE_TOPIC, stage_message(
                         "roll", 'reversed', stage_results), 0)
                 log.info("[bct._reverse_roll] reversed belt")
@@ -194,7 +190,7 @@ class BeltControlThread(threading.Thread):
             if self.reversed:
                 self.sg.wheel_speed(self.belt_speed)
                 self.reversed = False
-                mqttc.publish(
+                self.mqttc.publish(
                     STAGE_TOPIC, stage_message(
                         "roll", 'not_reversed', stage_results), 0)
                 log.info("[bct._reverse_roll] un-reversed belt")
@@ -203,7 +199,7 @@ class BeltControlThread(threading.Thread):
                     "[bct._reverse_roll] should_reverse=False, not reversed")
 
         # acknowledge the desired state is now reported
-        master_shadow.shadowUpdate(json.dumps({
+        self.master_shadow.shadowUpdate(json.dumps({
             "state": {
                 "reported": {
                     "convey_reverse": should_reverse}
@@ -253,7 +249,7 @@ class BeltControlThread(threading.Thread):
             stage_results['rolling'] = True
 
         # publish stage message to reflect the belt is rolling and not reversed
-        mqttc.publish(
+        self.mqttc.publish(
             STAGE_TOPIC, stage_message(
                 "roll", 'not_reversed', stage_results), 0)
 
@@ -276,7 +272,7 @@ class BeltControlThread(threading.Thread):
         stage_results['rolling'] = self.rolling = False
 
         # publish stage message to reflect the belt is stopped
-        mqttc.publish(
+        self.mqttc.publish(
             STAGE_TOPIC, stage_message(
                 "stop", addl_text, stage_results), 0)
 
@@ -300,14 +296,13 @@ class BeltTelemetryThread(threading.Thread):
     The thread that sets up interaction with the Belt Servos.
     """
 
-    def __init__(self, servo_group, telemetry_topic,
-                 frequency, args=(), kwargs={}):
+    def __init__(self, servo_group, frequency, mqtt_client, args=(), kwargs={}):
         super(BeltTelemetryThread, self).__init__(
             name="belt_telemetry_thread", args=args, kwargs=kwargs
         )
         self.sg = servo_group
-        self.telemetry_topic = telemetry_topic
         self.frequency = frequency
+        self.mqttc = mqtt_client
         log.info("[btt.__init__] frequency:{0}".format(
             self.frequency))
 
@@ -315,80 +310,31 @@ class BeltTelemetryThread(threading.Thread):
         while should_loop:
             msg = belt_message(self.sg)
             try:
-                mqttc.publish(self.telemetry_topic, json.dumps(msg), 0)
+                self.mqttc.publish(BELT_TELEMETRY_TOPIC, json.dumps(msg), 0)
                 time.sleep(self.frequency)  # 0.1 == 10Hz
             except RuntimeError as re:
                 log.error("[btt.run] RuntimeError:{0}".format(re))
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Conveyor Belt control and telemetry',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('config_file',
-                        help="The config file.")
-    parser.add_argument('--stage_topic', default='/convey/stages',
-                        help="Topic used to communicate belt stage messages.")
-    parser.add_argument('--telemetry_topic', default='/convey/telemetry',
-                        help="Topic used to communicate belt telemetry.")
-    parser.add_argument('--control_frequency', default=0.1,
-                        dest='control_frequency', type=float,
-                        help="Modify the default control frequency.")
-    parser.add_argument('--telemetry_frequency', default=1.0,
-                        dest='telemetry_frequency', type=float,
-                        help="Modify the default telemetry sample frequency.")
-    parser.add_argument('--speed', default=950,
-                        dest='speed', type=int,
-                        help="Modify the default belt speed.")
-    parser.add_argument('--debug', default=False, action='store_true',
-                        help="Activate debug output.")
-    args = parser.parse_args()
-    if args.debug:
-        log.setLevel(logging.DEBUG)
-
-    cfg = GroupConfigFile(args.config_file)
-    ggd_name = cfg['devices']['GGD_belt']['thing_name']
-
-    # get a shadow client to receive commands
-    mqttc_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
-    mqttc_shadow_client.configureEndpoint(
-        ggd_config.master_core_ip, ggd_config.master_core_port
-    )
-    mqttc_shadow_client.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
-        KeyPath=dir_path + "/certs/GGD_belt.private.key",
-        CertificatePath=dir_path + "/certs/GGD_belt.certificate.pem.crt"
-    )
-
-    mqttc = mqttc_shadow_client.getMQTTConnection()
-
-    if not mqtt_connect(mqttc_shadow_client):
-        raise EnvironmentError("connection to Master Shadow failed.")
-
-    # create and register the shadow handler on delta topics for commands
-    # with a persistent connection to the Master shadow
-    master_shadow = mqttc_shadow_client.createShadowHandlerWithName(
-        ggd_config.master_shadow_name, True)
-
-    token = master_shadow.shadowGet(shadow_mgr, 5)
-    log.debug("[initialize] shadowGet() tk:{0}".format(token))
+def operate_belt(cli, mqtt_client, master_shadow):
+    global should_loop
 
     with ServoProtocol() as sproto:
         for servo_id in belt_ids:
             sproto.ping(servo=servo_id)
-
     with ServoProtocol() as sp:
         sg = ServoGroup()
         sg['bone'] = Servo(sp, belt_ids[0], bone_servo_cache)
 
         # Use same Group with one read cache because only monitor thread reads
         btt = BeltTelemetryThread(sg,
-                                  telemetry_topic=args.telemetry_topic,
-                                  frequency=args.control_frequency)
+                                  frequency=cli.control_frequency,
+                                  mqtt_client=mqtt_client)
         bct = BeltControlThread(sg, event=cmd_event,
-                                belt_speed=args.speed,
-                                stage_topic=args.stage_topic,
-                                frequency=args.telemetry_frequency)
+                                belt_speed=cli.speed,
+                                frequency=cli.telemetry_frequency,
+                                mqtt_client=mqtt_client,
+                                master_shadow=master_shadow)
 
         btt.start()
         bct.start()
@@ -405,5 +351,50 @@ if __name__ == "__main__":
         btt.join()
         bct.join()
 
-    mqttc.disconnect()
+    mqtt_client.disconnect()
     time.sleep(2)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Conveyor Belt control and telemetry',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The GGD device_name in the config file.")
+    parser.add_argument('config_file',
+                        help="The config file.")
+    parser.add_argument('root_ca',
+                        help="Root CA File Path of Cloud Server Certificate.")
+    parser.add_argument('certificate',
+                        help="File Path of GGD Certificate.")
+    parser.add_argument('private_key',
+                        help="File Path of GGD Private Key.")
+    parser.add_argument('group_ca_dir',
+                        help="The directory where the discovered Group CA will "
+                             "be saved.")
+    parser.add_argument('--control_frequency', default=0.5,
+                        dest='control_frequency', type=float,
+                        help="Modify the default control frequency.")
+    parser.add_argument('--telemetry_frequency', default=1.0,
+                        dest='telemetry_frequency', type=float,
+                        help="Modify the default telemetry sample frequency.")
+    parser.add_argument('--speed', default=950,
+                        dest='speed', type=int,
+                        help="Modify the default belt speed.")
+    parser.add_argument('--debug', default=False, action='store_true',
+                        help="Activate debug output.")
+    pa = parser.parse_args()
+    if pa.debug:
+        log.setLevel(logging.DEBUG)
+
+    client, shadow_client, mshadow, ggd_name = utils.local_core_shadow_connect(
+        device_name=pa.device_name,
+        config_file=pa.config_file,
+        root_ca=pa.root_ca, certificate=pa.certificate,
+        private_key=pa.private_key, group_ca_dir=pa.group_ca_dir
+    )
+
+    token = mshadow.shadowGet(shadow_mgr, 5)
+    logging.debug("[core_connect] shadowGet() tk:{0}".format(token))
+
+    operate_belt(cli=pa, mqtt_client=client, master_shadow=mshadow)

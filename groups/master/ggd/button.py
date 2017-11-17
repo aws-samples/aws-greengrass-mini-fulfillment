@@ -25,11 +25,12 @@ import datetime
 import logging
 
 from gpiozero import PWMLED, Button
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
-import ggd_config
-from mqtt_utils import mqtt_connect
-from ..group_config import GroupConfigFile
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
+import utils
+from gg_group_setup import GroupConfigFile
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -41,7 +42,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-GGD_BUTTON_TOPIC = "/button"
+GGD_BUTTON_TOPIC = "button"
 
 hostname = socket.gethostname()
 green_led = PWMLED(4)
@@ -50,8 +51,8 @@ red_led = PWMLED(17)
 red_button = Button(6)
 white_led = PWMLED(27)
 white_button = Button(13)
-cfg = None
-ggd_name = 'Empty'
+mqttc = None
+ggd_name = None
 
 
 def button(sensor_id, toggle):
@@ -160,12 +161,60 @@ def button_white(cli):
     print("[cli.button_white] publishing button msg: {0}".format(msg))
 
 
+def core_connect(device_name, config_file, root_ca, certificate, private_key,
+                 group_ca_path):
+    global ggd_name, mqttc
+    cfg = GroupConfigFile(config_file)
+    ggd_name = cfg['devices'][device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
+
+    dip = DiscoveryInfoProvider()
+    dip.configureEndpoint(iot_endpoint)
+    dip.configureCredentials(
+        caPath=root_ca, certPath=certificate, keyPath=private_key
+    )
+    dip.configureTimeout(10)  # 10 sec
+    logging.info("[button] Discovery using CA:{0} cert:{1} prv_key:{2}".format(
+        root_ca, certificate, private_key
+    ))
+
+    gg_core, discovery_info = utils.discover_configured_core(
+        device_name=device_name, dip=dip, config_file=config_file,
+    )
+    if not gg_core:
+        raise EnvironmentError("[button] Couldn't find the Core")
+
+    ca_list = discovery_info.getAllCas()
+    group_id, ca = ca_list[0]
+    group_ca_file = utils.save_group_ca(ca, group_ca_path, group_id)
+
+    mqttc = AWSIoTMQTTClient(ggd_name)
+    # local Greengrass Core discovered, now connect to Core from this Device
+    log.info("[button] gca_file:{0} cert:{1}".format(
+        group_ca_file, certificate))
+    mqttc.configureCredentials(group_ca_file, private_key, certificate)
+    mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+
+    return mqttc, gg_core
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Mini Fulfillment GGD and CLI button',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The GGD device_name in the config file.")
     parser.add_argument('config_file',
                         help="The config file.")
+    parser.add_argument('root_ca',
+                        help="Root CA File Path of Cloud Server Certificate.")
+    parser.add_argument('certificate',
+                        help="File Path of GGD Certificate.")
+    parser.add_argument('private_key',
+                        help="File Path of GGD Private Key.")
+    parser.add_argument('group_ca_path',
+                        help="The directory path where the discovered Group CA "
+                             "will be saved.")
     subparsers = parser.add_subparsers()
 
     box_parser = subparsers.add_parser(
@@ -204,24 +253,18 @@ if __name__ == '__main__':
     white_parser.add_argument('--light', action='store_true')
     white_parser.set_defaults(func=button_white, toggle=True)
 
-    args = parser.parse_args()
+    pa = parser.parse_args()
 
-    cfg = GroupConfigFile(args.config_file)
-    ggd_name = cfg['devices']['GGD_button']['thing_name']
-
-    mqttc = AWSIoTMQTTClient(ggd_name)
-    mqttc.configureEndpoint(
-        ggd_config.master_core_ip, ggd_config.master_core_port
-    )
-    mqttc.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
-        KeyPath=dir_path + "/certs/GGD_button.private.key",
-        CertificatePath=dir_path + "/certs/GGD_button.certificate.pem.crt"
+    client, core = core_connect(
+        device_name=pa.device_name,
+        config_file=pa.config_file, root_ca=pa.root_ca,
+        certificate=pa.certificate, private_key=pa.private_key,
+        group_ca_path=pa.group_ca_path
     )
 
-    if mqtt_connect(mqttc):
-        args.func(args)
+    if utils.mqtt_connect(mqtt_client=client, core_info=core):
+        pa.func(pa)
 
-    time.sleep(1)
+    time.sleep(0.5)
     mqttc.disconnect()
     time.sleep(1)

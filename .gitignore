@@ -61,6 +61,8 @@ build
 
 # Other undesireables #
 *.pem
+*.prv
+*.pub
 *.crt
 *.key
 *.secret

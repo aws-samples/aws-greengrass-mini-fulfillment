@@ -12,26 +12,6 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-import os
-import json
-import time
-import requests
-import logging
-import argparse
-import datetime
-import threading
-import collections
-from cachetools import TTLCache
-from requests import ConnectionError
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, AWSIoTMQTTShadowClient
-
-import ggd_config
-from mqtt_utils import mqtt_connect
-from gg_group_setup import GroupConfigFile
-
-from stages import ArmStages, NO_BOX_FOUND
-from servo.servode import Servo, ServoProtocol, ServoGroup
-
 """
 Greengrass Arm device
 
@@ -58,6 +38,31 @@ shadow are:
 This device expects to be launched form a command line. To learn more about that 
 command line type: `python arm.py --help`
 """
+
+import os
+import json
+import time
+import requests
+import logging
+import argparse
+import datetime
+import threading
+import collections
+from cachetools import TTLCache
+from requests import ConnectionError
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, AWSIoTMQTTShadowClient
+
+from AWSIoTPythonSDK.core.greengrass.discovery.providers import \
+    DiscoveryInfoProvider
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient, DROP_OLDEST
+import utils
+from . import arm_servo_ids
+from gg_group_setup import GroupConfigFile
+
+from stages import ArmStages, NO_BOX_FOUND
+from servo.servode import Servo, ServoProtocol, ServoGroup
+
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 log = logging.getLogger('arm')
@@ -72,11 +77,7 @@ commands = ['run', 'stop']
 
 should_loop = True
 
-mqttc = None
-mstr_shadow_client = None
 ggd_name = 'Empty'
-ggd_ca_file_path = "<invalid_cert>"
-master_shadow = None
 cmd_event = threading.Event()
 cmd_event.clear()
 
@@ -92,47 +93,103 @@ def shadow_mgr(payload, status, token):
         json.dumps(json.loads(payload), sort_keys=True), token))
 
 
-def initialize():
-    global mqttc
-    mqttc = AWSIoTMQTTClient(ggd_name)
-    mqttc.configureEndpoint(
-        ggd_config.sort_arm_ip, ggd_config.sort_arm_port)
-    mqttc.configureCredentials(
-        CAFilePath=dir_path + "/" + ggd_ca_file_path,
-        KeyPath=dir_path + "/certs/GGD_arm.private.key",
-        CertificatePath=dir_path + "/certs/GGD_arm.certificate.pem.crt"
+def initialize(device_name, config_file, root_ca, certificate, private_key,
+               group_ca_path):
+    global ggd_name
+
+    cfg = GroupConfigFile(config_file)
+    local = dict()
+    remote = dict()
+
+    # determine heartbeat device's thing name and endpoint for MQTT clients
+    ggd_name = cfg['devices'][device_name]['thing_name']
+    iot_endpoint = cfg['misc']['iot_endpoint']
+
+    # Discover Greengrass Core
+    dip = DiscoveryInfoProvider()
+    dip.configureEndpoint(iot_endpoint)
+    dip.configureCredentials(
+        caPath=root_ca, certPath=certificate, keyPath=private_key
+    )
+    dip.configureTimeout(10)  # 10 sec
+    log.info("Discovery using CA: {0} certificate: {1} prv_key: {2}".format(
+        root_ca, certificate, private_key
+    ))
+    # Now discover the groups in which this device is a member.
+    # The arm should only be in two groups. The local and master groups.
+    discovered, discovery_info = utils.ggc_discovery(
+        ggd_name, dip, retry_count=10, max_groups=2
     )
 
-    global mstr_shadow_client
+    # Each group returned has a groupId which can compare to the configured
+    # groupId in the config file. If the IDs match, the 'local' Group has been
+    # found and therefore local core.
+    # If the groupId's do not match, the 'remote' or 'master' group has been
+    # found.
+    group_list = discovery_info.getAllGroups()
+    for g in group_list:
+        logging.info("[initialize] group_id:{0}".format(g.groupId))
+        if g.groupId == cfg['group']['id']:
+            local_cores = g.coreConnectivityInfoList
+            local['core'] = local_cores[0]  # just grab first core as local
+            local['ca'] = g.caList
+        else:
+            remote_cores = g.coreConnectivityInfoList
+            remote['core'] = remote_cores[0]  # just grab first core as remote
+            remote['ca'] = g.caList
+
+    if len(local) > 1 and len(remote) > 1:
+        logging.info("[initialize] local_core:{0} remote_core:{1}".format(
+            local, remote
+        ))
+    else:
+        raise EnvironmentError("Couldn't find the arm's Cores.")
+
+    # just save one of the group's CAs to use as a CA file later
+    local_core_ca_file = utils.save_group_ca(
+        local['ca'][0], group_ca_path, local['core'].groupId
+    )
+    remote_core_ca_file = utils.save_group_ca(
+        remote['ca'][0], group_ca_path, remote['core'].groupId
+    )
+
+    # Greengrass Cores discovered, now connect to Cores from this Device
+    # get a client to send telemetry
+    local_mqttc = AWSIoTMQTTClient(ggd_name)
+    log.info("[initialize] local gca_file:{0} cert:{1}".format(
+        local_core_ca_file, certificate))
+    local_mqttc.configureCredentials(
+        local_core_ca_file, private_key, certificate
+    )
+    local_mqttc.configureOfflinePublishQueueing(10, DROP_OLDEST)
+
+    if not utils.mqtt_connect(mqtt_client=local_mqttc, core_info=local['core']):
+        raise EnvironmentError("Connection to GG Core MQTT failed.")
+
     # get a shadow client to receive commands
-    mstr_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
-    mstr_shadow_client.configureEndpoint(
-        ggd_config.master_core_ip, ggd_config.master_core_port
-    )
-    mstr_shadow_client.configureCredentials(
-        CAFilePath=dir_path + "/certs/master-server.crt",
-        KeyPath=dir_path + "/certs/GGD_arm.private.key",
-        CertificatePath=dir_path + "/certs/GGD_arm.certificate.pem.crt"
+    master_shadow_client = AWSIoTMQTTShadowClient(ggd_name)
+    log.info("[initialize] remote ca_file:{0} cert:{1}".format(
+        local_core_ca_file, certificate))
+    remote_mqttc = master_shadow_client.getMQTTConnection()
+    remote_mqttc.configureCredentials(
+        remote_core_ca_file, private_key, certificate
     )
 
-    if not mqtt_connect(mqttc):
-        raise EnvironmentError("connection to GG Core MQTT failed.")
-    if not mqtt_connect(mstr_shadow_client):
-        raise EnvironmentError("connection to Master Shadow failed.")
+    if not utils.mqtt_connect(mqtt_client=master_shadow_client,
+                              core_info=remote['core']):
+        raise EnvironmentError("Connection to Master Shadow failed.")
 
-    global master_shadow
     # create and register the shadow handler on delta topics for commands
     # with a persistent connection to the Master shadow
-    master_shadow = mstr_shadow_client.createShadowHandlerWithName(
-        ggd_config.master_shadow_name, True)
-
+    master_shadow = master_shadow_client.createShadowHandlerWithName(
+        cfg['misc']['master_shadow_name'], True)
+    log.info("[initialize] created handler for shadow name: {0}".format(
+        cfg['misc']['master_shadow_name']
+    ))
     token = master_shadow.shadowGet(shadow_mgr, 5)
     log.info("[initialize] shadowGet() tk:{0}".format(token))
 
-    with ServoProtocol() as sproto:
-        # TODO ensure Baud rate is maxed
-        for servo_id in ggd_config.arm_servo_ids:
-            sproto.ping(servo=servo_id)
+    return local_mqttc, remote_mqttc, master_shadow
 
 
 def _stage_message(stage, text='', stage_result=None):
@@ -183,7 +240,8 @@ class ArmControlThread(threading.Thread):
     """
     # TODO move control into Lambda pending being able to access serial port
 
-    def __init__(self, servo_group, event, stage_topic, args=(), kwargs={}):
+    def __init__(self, servo_group, event, stage_topic, mqtt_client,
+                 master_shadow, args=(), kwargs={}):
         super(ArmControlThread, self).__init__(
             name="arm_control_thread", args=args, kwargs=kwargs
         )
@@ -198,9 +256,11 @@ class ArmControlThread(threading.Thread):
         self.control_stages['pick'] = self.pick
         self.control_stages['sort'] = self.sort
         self.stage_topic = stage_topic
+        self.mqtt_client = mqtt_client
+        self.master_shadow = master_shadow
         self.found_box = None
 
-        master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
+        self.master_shadow.shadowRegisterDeltaCallback(self.shadow_mgr)
         log.debug("[arm.__init__] shadowRegisterDeltaCallback()")
 
     def _activate_command(self, cmd):
@@ -245,7 +305,7 @@ class ArmControlThread(threading.Thread):
                 self._activate_command(cmd)
 
                 # acknowledge the desired state is now reported
-                master_shadow.shadowUpdate(json.dumps({
+                self.master_shadow.shadowUpdate(json.dumps({
                     "state": {
                         "reported": {
                             "sort_arm_cmd": cmd}
@@ -258,10 +318,13 @@ class ArmControlThread(threading.Thread):
     def home(self):
         log.debug("[act.home] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(self.stage_topic, _stage_message("home", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("home", "begin"), 0
+        )
         stage_result = arm.stage_home()
-        mqttc.publish(
-            self.stage_topic, _stage_message("home", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("home", "end", stage_result), 0
+        )
         log.debug("[act.home] [end]")
         return stage_result
 
@@ -271,7 +334,9 @@ class ArmControlThread(threading.Thread):
         loop = True
         self.found_box = NO_BOX_FOUND
         stage_result = NO_BOX_FOUND
-        mqttc.publish(self.stage_topic, _stage_message("find", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("find", "begin"), 0
+        )
         while self.cmd_event.is_set() and loop is True:
             stage_result = arm.stage_find()
             if stage_result['x'] and stage_result['y']:  # X & Y start as none
@@ -287,26 +352,28 @@ class ArmControlThread(threading.Thread):
                 log.info("[act.find] no box:{0}".format(stage_result))
                 time.sleep(1)
 
-        # upload the image file just before stage complete
-        if 'filename' in stage_result:
-            filename = stage_result['filename']
+        # TODO get image upload working with discovery based interaction
+        # # upload the image file just before stage complete
+        # if 'filename' in stage_result:
+        #     filename = stage_result['filename']
+        #
+        #     url = 'http://' + ggd_config.master_core_ip + ":"
+        #     url = url + str(ggd_config.master_core_port) + "/upload"
+        #     files = {'file': open(filename, 'rb')}
+        #     try:
+        #         log.info('[act.find] POST to URL:{0} file:{1}'.format(
+        #             url, filename))
+        #         r = requests.post(url, files=files)
+        #         log.info("[act.find] POST image file response:{0}".format(
+        #             r.status_code))
+        #     except ConnectionError as ce:
+        #         log.error("[act.find] Upload Image connection error:{0}".format(
+        #             ce
+        #         ))
 
-            url = 'http://' + ggd_config.master_core_ip + ":"
-            url = url + str(ggd_config.master_core_port) + "/upload"
-            files = {'file': open(filename, 'rb')}
-            try:
-                log.info('[act.find] POST to URL:{0} file:{1}'.format(
-                    url, filename))
-                r = requests.post(url, files=files)
-                log.info("[act.find] POST image file response:{0}".format(
-                    r.status_code))
-            except ConnectionError as ce:
-                log.error("[act.find] Upload Image connection error:{0}".format(
-                    ce
-                ))
-
-        mqttc.publish(
-            self.stage_topic, _stage_message("find", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("find", "end", stage_result), 0
+        )
 
         log.info("[act.find] outside self.found_box:{0}".format(self.found_box))
         log.debug("[act.find] [end]")
@@ -315,25 +382,31 @@ class ArmControlThread(threading.Thread):
     def pick(self):
         log.debug("[act.pick] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(self.stage_topic, _stage_message("pick", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("pick", "begin"), 0
+        )
         pick_box = self.found_box
         self.found_box = NO_BOX_FOUND
         log.info("[act.pick] pick_box:{0}".format(pick_box))
         log.info("[act.pick] self.found_box:{0}".format(self.found_box))
         stage_result = arm.stage_pick(previous_results=pick_box,
                                       cartesian=False)
-        mqttc.publish(
-            self.stage_topic, _stage_message("pick", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("pick", "end", stage_result), 0
+        )
         log.debug("[act.pick] [end]")
         return stage_result
 
     def sort(self):
         log.debug("[act.sort] [begin]")
         arm = ArmStages(self.sg)
-        mqttc.publish(self.stage_topic, _stage_message("sort", "begin"), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("sort", "begin"), 0
+        )
         stage_result = arm.stage_sort()
-        mqttc.publish(
-            self.stage_topic, _stage_message("sort", "end", stage_result), 0)
+        self.mqtt_client.publish(
+            self.stage_topic, _stage_message("sort", "end", stage_result), 0
+        )
         log.debug("[act.sort] [end]")
         return stage_result
 
@@ -392,20 +465,21 @@ class ArmTelemetryThread(threading.Thread):
     """
 
     def __init__(self, servo_group, frequency, telemetry_topic,
-                 args=(), kwargs={}):
+                 mqtt_client, args=(), kwargs={}):
         super(ArmTelemetryThread, self).__init__(
             name="arm_telemetry_thread", args=args, kwargs=kwargs
         )
         self.sg = servo_group
         self.frequency = frequency
         self.telemetry_topic = telemetry_topic
+        self.mqtt_client = mqtt_client
         log.info("[att.__init__] frequency:{0}".format(
             self.frequency))
 
     def run(self):
         while should_loop:
             msg = _arm_message(self.sg)
-            mqttc.publish(self.telemetry_topic, json.dumps(msg), 0)
+            self.mqtt_client.publish(self.telemetry_topic, json.dumps(msg), 0)
             time.sleep(self.frequency)  # sample rate
 
 
@@ -413,10 +487,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Arm control and telemetry',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('device_name',
+                        help="The arm's GGD device_name stored in config_file.")
     parser.add_argument('config_file',
                         help="The config file.")
-    parser.add_argument('ca_file_path',
-                        help="CA File Path of Server Certificate.")
+    parser.add_argument('root_ca',
+                        help="Root CA File Path of Server Certificate.")
+    parser.add_argument('certificate',
+                        help="File Path of GGD Certificate.")
+    parser.add_argument('private_key',
+                        help="File Path of GGD Private Key.")
+    parser.add_argument('group_ca_path',
+                        help="The directory where the discovered Group CA will "
+                             "be saved.")
     parser.add_argument('--stage_topic', default='/arm/stages',
                         help="Topic used to communicate arm stage messages.")
     parser.add_argument('--telemetry_topic', default='/arm/telemetry',
@@ -426,30 +509,37 @@ if __name__ == "__main__":
                         help="Modify the default telemetry sample frequency.")
     parser.add_argument('--debug', default=False, action='store_true',
                         help="Activate debug output.")
-    args = parser.parse_args()
-    if args.debug:
+    pa = parser.parse_args()
+    if pa.debug:
         log.setLevel(logging.DEBUG)
         logging.getLogger('servode').setLevel(logging.DEBUG)
 
-    cfg = GroupConfigFile(args.config_file)
-    ggd_name = cfg['devices']['GGD_arm']['thing_name']
-    ggd_ca_file_path = args.ca_file_path
-
-    initialize()
+    local_mqtt, remote_mqtt, m_shadow = initialize(
+        pa.device_name, pa.config_file, pa.root_ca, pa.certificate,
+        pa.private_key, pa.group_ca_path
+    )
 
     with ServoProtocol() as sp:
+        for servo_id in arm_servo_ids:
+            sp.ping(servo=servo_id)
+
         sg = ServoGroup()
-        sg['base'] = Servo(sp, ggd_config.arm_servo_ids[0], base_servo_cache)
-        sg['femur01'] = Servo(sp, ggd_config.arm_servo_ids[1], femur01_servo_cache)
-        sg['femur02'] = Servo(sp, ggd_config.arm_servo_ids[2], femur02_servo_cache)
-        sg['tibia'] = Servo(sp, ggd_config.arm_servo_ids[3], tibia_servo_cache)
-        sg['effector'] = Servo(sp, ggd_config.arm_servo_ids[4], eff_servo_cache)
+        sg['base'] = Servo(sp, arm_servo_ids[0], base_servo_cache)
+        sg['femur01'] = Servo(sp, arm_servo_ids[1], femur01_servo_cache)
+        sg['femur02'] = Servo(sp, arm_servo_ids[2], femur02_servo_cache)
+        sg['tibia'] = Servo(sp, arm_servo_ids[3], tibia_servo_cache)
+        sg['effector'] = Servo(sp, arm_servo_ids[4], eff_servo_cache)
 
         # Use same ServoGroup with one read cache because only the telemetry
         # thread reads
-        amt = ArmTelemetryThread(sg, frequency=args.frequency,
-                                 telemetry_topic=args.telemetry_topic)
-        act = ArmControlThread(sg, cmd_event, stage_topic=args.stage_topic)
+        amt = ArmTelemetryThread(
+            sg, frequency=pa.frequency, telemetry_topic=pa.telemetry_topic,
+            mqtt_client=local_mqtt
+        )
+        act = ArmControlThread(
+            sg, cmd_event, stage_topic=pa.stage_topic,
+            mqtt_client=remote_mqtt, master_shadow=m_shadow
+        )
         amt.start()
         act.start()
 
@@ -464,5 +554,6 @@ if __name__ == "__main__":
         amt.join()
         act.join()
 
-    mqttc.disconnect()
+    local_mqtt.disconnect()
+    remote_mqtt.disconnect()
     time.sleep(2)
