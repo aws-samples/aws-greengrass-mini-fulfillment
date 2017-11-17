@@ -12,7 +12,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
-GGC_SHADOW_NAME = "MasterBrain"
+GGC_SHADOW_NAME = "master_brain"
 
 gg_client = greengrasssdk.client('iot-data')
 
@@ -134,30 +134,30 @@ def handle_button(msg):
 
 # Handler for processing lambda work items
 def handler(event, context):
+    log.debug("[handler] raw event:{0}".format(event))
     # Unwrap the message
-    msg = json.loads(event)
-    log.info("[handler] thinking about message: {0}".format(msg))
     log.debug("[handler] context.function_name:{0}".format(
         context.function_name))
     log.debug("[handler] context.client_context:{0}".format(
         context.client_context))
+    msg = json.loads(event)
     # topic = context.client_context.custom['subject']
 
     ggd_id = ''
     if 'ggd_id' in msg:
         ggd_id = msg['ggd_id']
 
-    if ggd_id == "GGD_button":
+    if ggd_id == "button_ggd":
         handle_button(msg)
-    elif ggd_id == "GGD_belt":
+    elif ggd_id == "belt_ggd":
         log.debug("[handler] message from the belts")
-    elif ggd_id == "GGD_bridge":
+    elif ggd_id == "bridge_ggd":
         log.debug("[handler] message from the bridge")
-    elif ggd_id == "GGD_sort_arm":
+    elif ggd_id == "sort_arm_ggd":
         log.debug("[handler] message from the sort arm")
         if 'stage' in msg:
             handle_arm_stage(ggd_id=ggd_id, msg=msg)
-    elif ggd_id == "GGD_inv_arm":
+    elif ggd_id == "inv_arm_ggd":
         log.debug("[handler] message from the inv arm")
         if 'stage' in msg:
             handle_arm_stage(ggd_id=ggd_id, msg=msg)
