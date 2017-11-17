@@ -320,7 +320,7 @@ if __name__ == "__main__":
             log.setLevel(logging.DEBUG)
 
         mqttc, shadow_client, mshadow, ggd_name = \
-            utils.local_core_shadow_connect(
+            utils.local_shadow_connect(
                 device_name=pa.device_name,
                 config_file=pa.config_file,
                 root_ca=pa.root_ca, certificate=pa.certificate,
