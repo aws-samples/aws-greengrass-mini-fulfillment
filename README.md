@@ -131,9 +131,6 @@ This file has commands that are useful when instantiating this demo and that dem
     - `deploy <config_file>` – deploys a previously provisioned Greengrass Group
     - `clean-all <config_file>` – cleans up the entirety of a Greengrass Group 
     and the locally stored provisioning artifacts.
-- `groups/man_cert_setup.py` – manually creates a Certificate Authority (CA) and 
-server certificate for use locally on each host. These protect communication 
-between the Greengrass Core and Greengrass Devices, when not using discovery.
 - `groups/servo_setup.py` – prepares the servo manufacturer's communication library 
 for use on a Raspberry Pi with the Raspbian OS.
 
