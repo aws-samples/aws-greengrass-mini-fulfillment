@@ -3,7 +3,7 @@
 At re:Invent 2016 AWS Greengrass was introduced to the world. This miniature 
 fulfillment center demonstration was used to display what could be done with 
 Greengrass when announced. It has since been upgraded to use the publicly available 
-version of [Greengrass](https://aws.amazon.com/greengrass/).
+version of [Greengrass](https://aws.amazon.com/greengrass/) v1.
  
 A [video](https://youtu.be/XQQjX8GTEko?t=27m27s) was taken of the completed and 
 operational Greengrass-based miniature fulfillment center, a.k.a. "dual robot arm demo" 
