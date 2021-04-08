@@ -66,22 +66,21 @@ $ ./servode.py write_register goal_position 490 --sid 10 --sid 11
 ```
 ## Installation
 
-1. Download and un-zip [Servode](https://github.com/brettf/servode/archive/master.zip) or `pip install servode`
-2. Download the latest [ROBOTIS SDK](https://github.com/ROBOTIS-GIT/DynamixelSDK/releases)
-3. Change to the directory where `servode.py` resides
-4. Un-tar the ROBOTIS SDK:
+1. Download the latest [ROBOTIS SDK](https://github.com/ROBOTIS-GIT/DynamixelSDK/releases)
+2. Change to the directory where `servode.py` resides
+3. Un-tar the ROBOTIS SDK:
 
     ```
     #example
     tar -xvf ~/download/dir/of/DynamixelSDK-#.#.#.tar
     ```  
-5. Copy the dynamixel python functions to the directory where `servode.py` resides
+4. Copy the dynamixel python functions to the directory where `servode.py` resides
 
     ```
     # example
     cp DynamixelSDK-#.#.#.tar/python/dynamixel_functions_py/dynamixel_functions.py .
      ```
-6. Edit `dynamixel_functions.py` to use the CDLL for your OS. 
+5. Edit `dynamixel_functions.py` to use the CDLL for your OS. 
     - Example CDLL edit for Raspbian Jessie: 
     ```python
         ...snip...
