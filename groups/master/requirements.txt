@@ -2,7 +2,7 @@ AWSIoTPythonSDK>=1.2.0
 boto3>=1.4.7
 cachetools==2.0.0
 fire==0.1.2
-Flask==1.0
+Flask==2.3.2
 Flask-Cors==3.0.2
 futures==3.0.5
 gg-group-setup>=0.5.2
